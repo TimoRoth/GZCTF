@@ -37,7 +37,7 @@ import {
 } from '@Utils/Shared'
 import { useEditChallenge, useEditChallenges } from '@Hooks/useEdit'
 import { useGame } from '@Hooks/useGame'
-import api, { ChallengeCategory, ChallengeType, ChallengeUpdateModel } from '@Api'
+import api, { ChallengeCategory, ChallengeType, ChallengeUpdateModel, ContainerProvider, ContainerProviderType } from '@Api'
 import misc from '@Styles/Misc.module.css'
 
 const GameChallengeEdit: FC = () => {
@@ -57,6 +57,7 @@ const GameChallengeEdit: FC = () => {
   const [type, setType] = useState<string | null>(challenge?.type ?? ChallengeType.StaticAttachment)
   const [currentAcceptCount, setCurrentAcceptCount] = useState(0)
   const [previewOpened, setPreviewOpened] = useState(false)
+  const [containerProvider, setContainerProvider] = useState<ContainerProvider | null>(null);
 
   const modals = useModals()
   const challengeTypeLabelMap = useChallengeTypeLabelMap()
@@ -73,6 +74,12 @@ const GameChallengeEdit: FC = () => {
       setCurrentAcceptCount(challenge.acceptedCount)
     }
   }, [challenge])
+
+  useEffect(() => {
+    api.admin.adminGetContainerProvider()
+      .then(res => setContainerProvider(res.data))
+      .catch(() => setContainerProvider(null))
+  }, [])
 
   const onUpdate = async (challenge: ChallengeUpdateModel, noFeedback?: boolean) => {
     if (!challenge) return
@@ -445,14 +452,26 @@ const GameChallengeEdit: FC = () => {
           <Grid columns={12}>
             <Grid.Col span={8}>
               <Group justify="space-between" align="flex-end">
-                <TextInput
-                  label={t('admin.content.games.challenges.container_image')}
-                  disabled={disabled}
-                  value={challengeInfo.containerImage ?? ''}
-                  required
-                  onChange={(e) => setChallengeInfo({ ...challengeInfo, containerImage: e.target.value })}
-                  classNames={{ root: misc.flexGrow }}
-                />
+                {(containerProvider?.type == ContainerProviderType.DockerCompose) && (
+                  <Textarea
+                    label={t('admin.content.games.challenges.container_compose')}
+                    disabled={disabled}
+                    value={challengeInfo.containerImage ?? ''}
+                    required
+                    onChange={(e) => setChallengeInfo({ ...challengeInfo, containerImage: e.target.value })}
+                    classNames={{ root: misc.flexGrow }}
+                    styles={{ input: { resize: 'vertical' } }}
+                  />
+                ) || (
+                  <TextInput
+                    label={t('admin.content.games.challenges.container_image')}
+                    disabled={disabled}
+                    value={challengeInfo.containerImage ?? ''}
+                    required
+                    onChange={(e) => setChallengeInfo({ ...challengeInfo, containerImage: e.target.value })}
+                    classNames={{ root: misc.flexGrow }}
+                  />
+                )}
                 <Button
                   miw="8rem"
                   color={challenge?.testContainer ? 'orange' : 'green'}
