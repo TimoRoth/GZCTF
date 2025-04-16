@@ -43,6 +43,24 @@ public class AdminController(
     IStringLocalizer<Program> localizer) : ControllerBase
 {
     /// <summary>
+    /// Get container provider
+    /// </summary>
+    /// <response code="200">Name of the container backend in use</response>
+    /// <response code="401">Unauthorized user</response>
+    /// <response code="403">Forbidden</response>
+    [HttpGet("ContainerProvider")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetContainerProvider()
+    {
+        // always reload, ensure latest
+        configService.ReloadConfig();
+
+        var providerType = serviceProvider.GetRequiredService<IOptionsSnapshot<ContainerProvider>>().Value.Type;
+
+        return Ok(new { Type = Enum.GetName<ContainerProviderType>(providerType) });
+    }
+
+    /// <summary>
     /// Get configuration
     /// </summary>
     /// <remarks>

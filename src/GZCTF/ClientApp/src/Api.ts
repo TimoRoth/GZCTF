@@ -1898,6 +1898,17 @@ export interface ClientCaptchaInfoModel {
   siteKey?: string;
 }
 
+export interface ContainerProvider {
+  /** Type of the container backend in use */
+  type?: ContainerProviderType;
+}
+
+export enum ContainerProviderType {
+  Docker = "Docker",
+  Kubernetes = "Kubernetes",
+  DockerCompose = "DockerCompose",
+}
+
 /** Hash Pow verification */
 export interface HashPowChallenge {
   /** Challenge ID */
@@ -2554,6 +2565,22 @@ export class Api<
         data,
         options,
       ),
+
+    /**
+     * @description Use this API to get container provider specific settings
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider configuration
+     * @request GET:/api/admin/containerprovider
+     */
+    adminGetContainerProvider: (params: RequestParams = {}) =>
+      this.request<ContainerProvider, RequestResponse>({
+        path: `/api/admin/containerprovider`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
 
     /**
      * @description Use this API to get global settings, requires Admin permission
