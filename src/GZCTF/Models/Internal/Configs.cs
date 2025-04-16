@@ -401,7 +401,8 @@ public class EmailConfig
 public enum ContainerProviderType
 {
     Docker,
-    Kubernetes
+    Kubernetes,
+    DockerCompose
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<ContainerPortMappingType>))]

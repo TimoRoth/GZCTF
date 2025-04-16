@@ -347,6 +347,9 @@
   <data name="ContainerManager_DockerMode" xml:space="preserve">
     <value>容器管理模式：Docker 單實例容器控制</value>
   </data>
+  <data name="ContainerManager_DockerComposeMode" xml:space="preserve">
+    <value>容器管理模式：Docker 單實例容器控制</value>
+  </data>
   <data name="ContainerManager_K8sMode" xml:space="preserve">
     <value>容器管理模式：K8s 集群 Pod 容器控制</value>
   </data>

@@ -347,6 +347,9 @@
   <data name="ContainerManager_DockerMode" xml:space="preserve">
     <value>컨테이너 모드: Docker Instance 컨테이너 제어</value>
   </data>
+  <data name="ContainerManager_DockerComposeMode" xml:space="preserve">
+    <value>컨테이너 모드: Docker Instance 컨테이너 제어</value>
+  </data>
   <data name="ContainerManager_K8sMode" xml:space="preserve">
     <value>컨테이너 모드 : K8s Cluster Pod 컨테이너 제어</value>
   </data>

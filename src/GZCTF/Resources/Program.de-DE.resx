@@ -351,6 +351,9 @@
   <data name="ContainerManager_DockerMode" xml:space="preserve">
     <value>Containermodus: Docker-Instanz-Containersteuerung</value>
   </data>
+  <data name="ContainerManager_DockerComposeMode" xml:space="preserve">
+    <value>Containermodus: Docker-Instanz-Containersteuerung</value>
+  </data>
   <data name="ContainerManager_K8sMode" xml:space="preserve">
     <value>Containermodus: K8s-Cluster-Pod-Containersteuerung</value>
   </data>
