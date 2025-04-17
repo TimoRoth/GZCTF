@@ -86,9 +86,6 @@ public class DockerComposeManager : IContainerManager
         if (mainIds.Count != 1)
             throw new Exception("Unexpected container id output."); // TODO: non-generic exception
 
-        // Wait a moment, in case the container just exits immediately.
-        await Task.Delay(500, token);
-
         var info = await _client.Containers.InspectContainerAsync(mainIds[0]);
 
         Models.Data.Container container = new Models.Data.Container
