@@ -38,7 +38,7 @@ public class DockerComposeManager : IContainerManager
         //TODO: Exception handling
         await LaunchHelper("docker",
             ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
-            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } }, tempDir.ToString(), container.Image);
+            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } }, tempDir.ToString(), container.Image, token);
 
         container.Status = ContainerStatus.Destroyed;
     }
@@ -57,7 +57,7 @@ public class DockerComposeManager : IContainerManager
         //TODO: Exception handling
         var services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
             new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } },
-            tempDir.ToString(), config.Image);
+            tempDir.ToString(), config.Image, token);
 
         if (!services.Contains("main"))
             throw new Exception("No 'main' service in compose file."); // TODO: non-generic exception
@@ -76,17 +76,16 @@ public class DockerComposeManager : IContainerManager
                 { "GZCTF_CHALLENGE_ID", config.ChallengeId.ToString() },
                 { "GZCTF_FLAG", config.Flag ?? "" },
             },
-            tempDir.ToString(),
-            config.Image);
+            tempDir.ToString(), config.Image, token);
 
         //TODO: Exception handling
         var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
             new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } },
-            tempDir.ToString(), config.Image);
+            tempDir.ToString(), config.Image, token);
         if (mainIds.Count != 1)
             throw new Exception("Unexpected container id output."); // TODO: non-generic exception
 
-        var info = await _client.Containers.InspectContainerAsync(mainIds[0]);
+        var info = await _client.Containers.InspectContainerAsync(mainIds[0], token);
 
         Models.Data.Container container = new Models.Data.Container
         {
@@ -138,7 +137,7 @@ public class DockerComposeManager : IContainerManager
         return container;
     }
 
-    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string workdir = "", string? input = null)
+    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string workdir = "", string? input = null, CancellationToken token = default)
     {
         command = ResolvePath(command);
 
@@ -177,7 +176,7 @@ public class DockerComposeManager : IContainerManager
                 if (input != null)
                     await writer.WriteAsync(input);
 
-            await proc.WaitForExitAsync();
+            await proc.WaitForExitAsync(token);
 
             if (proc.ExitCode != 0)
                 throw new LaunchException(proc.ExitCode, String.Join(Environment.NewLine, res));
