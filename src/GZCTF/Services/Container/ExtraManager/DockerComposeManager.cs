@@ -144,9 +144,13 @@ public class DockerComposeManager : IContainerManager
         }
     }
 
+    private Dictionary<string, string> _resolvedCommands = [];
+
     private string ResolvePath(string command)
     {
-        //TODO: maybe somehow cache this
+        if (_resolvedCommands.TryGetValue(command, out var res))
+            return res;
+
         if (!Path.IsPathRooted(command) && !command.Contains(Path.DirectorySeparatorChar) && !command.Contains(Path.AltDirectorySeparatorChar) && !File.Exists(command))
         {
             string[] path = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
@@ -156,13 +160,19 @@ public class DockerComposeManager : IContainerManager
             {
                 string fullCommand = Path.Combine(dir, command);
                 if (File.Exists(fullCommand))
+                {
+                    _resolvedCommands.Add(command, fullCommand);
                     return fullCommand;
+                }
 
                 foreach (string ext in exts)
                 {
                     string fullCommandExt = fullCommand + ext;
                     if (File.Exists(fullCommandExt))
+                    {
+                        _resolvedCommands.Add(command, fullCommandExt);
                         return fullCommandExt;
+                    }
                 }
             }
         }
