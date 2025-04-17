@@ -92,7 +92,7 @@ public class DockerComposeManager : IContainerManager
         return container;
     }
 
-    private async Task<string> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string? input = null)
+    private async Task<string> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string workdir = "", string? input = null)
     {
         command = ResolvePath(command);
 
@@ -105,6 +105,7 @@ public class DockerComposeManager : IContainerManager
             RedirectStandardError = true,
             RedirectStandardInput = true,
             CreateNoWindow = true,
+            WorkingDirectory = workdir,
         };
 
         foreach (string arg in arguments)
