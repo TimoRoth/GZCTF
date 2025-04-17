@@ -33,14 +33,16 @@ public class DockerComposeManager : IContainerManager
             return;
         }
 
+        using TempDir tempDir = new TempDir("gzdockertmp_");
+
         //TODO: Exception handling
         await LaunchHelper("docker",
             ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
             new Dictionary<string, string>
             {
                 { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() },
-                //TODO: Pass resource limit, the token/flag variables and maybe the desired port to be exposed
             },
+            tempDir.ToString(),
             container.Image);
 
         container.Status = ContainerStatus.Destroyed;
@@ -53,17 +55,19 @@ public class DockerComposeManager : IContainerManager
             return await _fallbackManager.CreateContainerAsync(config, token);
 
         string name = $"{config.TeamId}_{config.ChallengeId}_{(config.Flag ?? Guid.NewGuid().ToString("N")).ToMD5String()[..16]}";
+        using TempDir tempDir = new TempDir("gzdockertmp_");
 
         //TODO: sign into registries
 
         //TODO: Exception handling
-        //TODO: Move this to a safe workdir
         await LaunchHelper("docker",
             ["compose", "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
             new Dictionary<string, string>
             {
                 { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() },
+                //TODO: Pass resource limit, the token/flag variables and maybe the desired port to be exposed
             },
+            tempDir.ToString(),
             config.Image);
 
         //TODO: test if service with name "main" exists, since further info will be drawn from it. Or try to parse first via "docker compose config"
@@ -179,6 +183,23 @@ public class DockerComposeManager : IContainerManager
         }
 
         return command;
+    }
+
+    private class TempDir : IDisposable
+    {
+        public DirectoryInfo Path { get; private set; }
+        public override string ToString() => Path.FullName;
+
+        public TempDir(string? prefix = null)
+        {
+            Path = Directory.CreateTempSubdirectory(prefix);
+        }
+
+        public void Dispose()
+        {
+            if (Path.Exists)
+                Path.Delete(true);
+        }
     }
 
     private class LaunchException : Exception
