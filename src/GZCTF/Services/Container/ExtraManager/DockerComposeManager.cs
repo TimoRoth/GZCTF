@@ -84,23 +84,61 @@ public class DockerComposeManager : IContainerManager
             tempDir.ToString(),
             config.Image);
 
+        //TODO: Exception handling
+        var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
+            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } },
+            tempDir.ToString(), config.Image);
+        if (mainIds.Count != 1)
+            throw new Exception("Unexpected container id output."); // TODO: non-generic exception
+
+        // Wait a moment, in case the container just exits immediately.
+        await Task.Delay(500, token);
+
+        var info = await _client.Containers.InspectContainerAsync(mainIds[0]);
+
         Models.Data.Container container = new Models.Data.Container
         {
             ContainerId = name,
             Image = config.Image,
-            StartedAt = DateTimeOffset.UtcNow, // Has to be UTC for Postgres
-            IP = "127.0.0.42", //TODO
+            IP = info.NetworkSettings.Networks.FirstOrDefault().Value.IPAddress,
             Port = config.ExposedPort,
             IsProxy = !_meta.ExposePort,
-            Status = ContainerStatus.Running,
+            StartedAt = DateTimeOffset.Parse(info.State.StartedAt),
         };
 
         container.ExpectStopAt = container.StartedAt + TimeSpan.FromHours(2);
 
+        container.Status = info.State.Dead || info.State.OOMKilled || info.State.Restarting
+            ? ContainerStatus.Destroyed
+            : info.State.Running
+                ? ContainerStatus.Running
+                : ContainerStatus.Pending;
+
+        if (container.Status != ContainerStatus.Running)
+        {
+            _logger.SystemLog(
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_ContainerInstanceCreationFailedWithError), "Compose Script", info.State.Error],
+                TaskStatus.Failed, LogLevel.Warning);
+
+            await DestroyContainerAsync(container, token);
+            return null;
+        }
+
         if (!_meta.ExposePort)
             return container;
 
-        container.PublicPort = 1234; // TODO
+        var port = info.NetworkSettings.Ports
+            .FirstOrDefault(p =>
+                p.Key.StartsWith(config.ExposedPort.ToString())
+            ).Value.First().HostPort;
+
+        if (int.TryParse(port, out var numPort))
+            container.PublicPort = numPort;
+        else
+            _logger.SystemLog(
+                StaticLocalizer[nameof(Resources.Program.ContainerManager_PortParsingFailed), port],
+                TaskStatus.Failed,
+                LogLevel.Warning);
 
         if (!string.IsNullOrEmpty(_meta.PublicEntry))
             container.PublicIP = _meta.PublicEntry;
