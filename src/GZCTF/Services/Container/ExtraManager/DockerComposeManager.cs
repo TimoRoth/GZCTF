@@ -94,36 +94,7 @@ public class DockerComposeManager : IContainerManager
 
     private async Task<string> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string? input = null)
     {
-        //TODO: maybe somehow cache this
-        if (!Path.IsPathRooted(command) && !command.Contains(Path.DirectorySeparatorChar) && !command.Contains(Path.AltDirectorySeparatorChar) && !File.Exists(command))
-        {
-            string[] path = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
-            string[] exts = Environment.GetEnvironmentVariable("PATHEXT")?.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-
-            foreach (string dir in path)
-            {
-                string? fullCommand = Path.Combine(dir, command);
-                if (File.Exists(fullCommand))
-                {
-                    command = fullCommand;
-                    break;
-                }
-
-                fullCommand = null;
-                foreach (string ext in exts)
-                {
-                    string fullCommandExt = Path.Combine(dir, command + ext);
-                    if (File.Exists(fullCommandExt))
-                    {
-                        command = fullCommand = fullCommandExt;
-                        break;
-                    }
-                }
-
-                if (fullCommand != null)
-                    break;
-            }
-        }
+        command = ResolvePath(command);
 
         using var proc = new Process();
         proc.StartInfo = new ProcessStartInfo
@@ -171,6 +142,32 @@ public class DockerComposeManager : IContainerManager
             proc.OutputDataReceived -= handler;
             proc.ErrorDataReceived -= handler;
         }
+    }
+
+    private string ResolvePath(string command)
+    {
+        //TODO: maybe somehow cache this
+        if (!Path.IsPathRooted(command) && !command.Contains(Path.DirectorySeparatorChar) && !command.Contains(Path.AltDirectorySeparatorChar) && !File.Exists(command))
+        {
+            string[] path = Environment.GetEnvironmentVariable("PATH")!.Split(Path.PathSeparator);
+            string[] exts = Environment.GetEnvironmentVariable("PATHEXT")?.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
+            foreach (string dir in path)
+            {
+                string fullCommand = Path.Combine(dir, command);
+                if (File.Exists(fullCommand))
+                    return fullCommand;
+
+                foreach (string ext in exts)
+                {
+                    string fullCommandExt = fullCommand + ext;
+                    if (File.Exists(fullCommandExt))
+                        return fullCommandExt;
+                }
+            }
+        }
+
+        return command;
     }
 
     private class LaunchException : Exception
