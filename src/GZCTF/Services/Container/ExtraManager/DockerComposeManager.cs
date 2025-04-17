@@ -92,7 +92,7 @@ public class DockerComposeManager : IContainerManager
         return container;
     }
 
-    private async Task<string> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string workdir = "", string? input = null)
+    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string workdir = "", string? input = null)
     {
         command = ResolvePath(command);
 
@@ -116,8 +116,8 @@ public class DockerComposeManager : IContainerManager
 
         proc.EnableRaisingEvents = true;
 
-        StringBuilder resBuilder = new StringBuilder();
-        DataReceivedEventHandler handler = (sender, data) => { resBuilder.Append(data.Data).Append('\n'); };
+        List<string> res = new List<string>();
+        DataReceivedEventHandler handler = (sender, data) => { if (data.Data != null) res.Add(data.Data); };
         proc.OutputDataReceived += handler;
         proc.ErrorDataReceived += handler;
 
@@ -134,9 +134,9 @@ public class DockerComposeManager : IContainerManager
             await proc.WaitForExitAsync();
 
             if (proc.ExitCode != 0)
-                throw new LaunchException(proc.ExitCode, resBuilder.ToString());
+                throw new LaunchException(proc.ExitCode, String.Join(Environment.NewLine, res));
 
-            return resBuilder.ToString();
+            return res;
         }
         finally
         {
