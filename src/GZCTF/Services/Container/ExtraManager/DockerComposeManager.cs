@@ -73,7 +73,13 @@ public class DockerComposeManager : IContainerManager
             new Dictionary<string, string>
             {
                 { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() },
-                //TODO: Pass resource limit, the token/flag variables and maybe the desired port to be exposed
+                { "CPU_COUNT", (config.CPUCount / 10.0).ToString() },
+                { "MEM_LIMIT", (config.MemoryLimit * 1024 * 1024).ToString() },
+                { "NET_MODE", _meta.Config.ChallengeNetwork ?? "default" },
+                { "GZCTF_TEAM_ID", config.TeamId },
+                { "GZCTF_USER_ID", config.UserId.ToString() }, //TODO: some of these need to be set as labels in the compose file, consider generating an override file somehow
+                { "GZCTF_CHALLENGE_ID", config.ChallengeId.ToString() },
+                { "GZCTF_FLAG", config.Flag ?? "" },
             },
             tempDir.ToString(),
             config.Image);
