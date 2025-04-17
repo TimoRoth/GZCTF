@@ -60,6 +60,14 @@ public class DockerComposeManager : IContainerManager
         //TODO: sign into registries
 
         //TODO: Exception handling
+        var services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
+            new Dictionary<string, string> { { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() } },
+            tempDir.ToString(), config.Image);
+
+        if (!services.Contains("main"))
+            throw new Exception("No 'main' service in compose file."); // TODO: non-generic exception
+
+        //TODO: Exception handling
         await LaunchHelper("docker",
             ["compose", "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
             new Dictionary<string, string>
@@ -69,8 +77,6 @@ public class DockerComposeManager : IContainerManager
             },
             tempDir.ToString(),
             config.Image);
-
-        //TODO: test if service with name "main" exists, since further info will be drawn from it. Or try to parse first via "docker compose config"
 
         Models.Data.Container container = new Models.Data.Container
         {
