@@ -38,12 +38,7 @@ public class DockerComposeManager : IContainerManager
         //TODO: Exception handling
         await LaunchHelper("docker",
             ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
-            new Dictionary<string, string>
-            {
-                { "DOCKER_HOST", _meta.Config.Uri },
-            },
-            tempDir.ToString(),
-            container.Image);
+            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } }, tempDir.ToString(), container.Image);
 
         container.Status = ContainerStatus.Destroyed;
     }
