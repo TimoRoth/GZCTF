@@ -52,7 +52,7 @@ public class DockerComposeManager : IContainerManager
         if (!config.Image.Trim('\n', '\r').Contains('\n'))
             return await _fallbackManager.CreateContainerAsync(config, token);
 
-        string name = $"{config.TeamId}_{config.ChallengeId}";
+        string name = $"{config.TeamId}_{config.ChallengeId}_{(config.Flag ?? Guid.NewGuid().ToString("N")).ToMD5String()[..16]}";
 
         //TODO: sign into registries
 
