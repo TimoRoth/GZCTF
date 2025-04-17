@@ -40,7 +40,7 @@ public class DockerComposeManager : IContainerManager
             ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
             new Dictionary<string, string>
             {
-                { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() },
+                { "DOCKER_HOST", _meta.Config.Uri },
             },
             tempDir.ToString(),
             container.Image);
@@ -61,7 +61,7 @@ public class DockerComposeManager : IContainerManager
 
         //TODO: Exception handling
         var services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
-            new Dictionary<string, string> { { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() } },
+            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } },
             tempDir.ToString(), config.Image);
 
         if (!services.Contains("main"))
@@ -72,7 +72,7 @@ public class DockerComposeManager : IContainerManager
             ["compose", "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
             new Dictionary<string, string>
             {
-                { "DOCKER_HOST", _client.Configuration.EndpointBaseUri.ToString() },
+                { "DOCKER_HOST", _meta.Config.Uri },
                 { "CPU_COUNT", (config.CPUCount / 10.0).ToString() },
                 { "MEM_LIMIT", (config.MemoryLimit * 1024 * 1024).ToString() },
                 { "NET_MODE", _meta.Config.ChallengeNetwork ?? "default" },
