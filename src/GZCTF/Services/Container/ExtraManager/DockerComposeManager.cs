@@ -49,8 +49,22 @@ public class DockerComposeManager : IContainerManager
     {
         var compose = new
         {
-            services = new Dictionary<string, object>()
+            services = new Dictionary<string, object>(),
+            networks = new Dictionary<string, object>(),
         };
+
+        var networks = new Dictionary<string, object?>();
+
+        if (!String.IsNullOrWhiteSpace(_meta.Config.ChallengeNetwork))
+        {
+            compose.networks[_meta.Config.ChallengeNetwork] = new
+            {
+                name = _meta.Config.ChallengeNetwork,
+                external = true,
+            };
+
+            networks[_meta.Config.ChallengeNetwork] = null;
+        }
 
         var labels = new
         {
@@ -59,35 +73,37 @@ public class DockerComposeManager : IContainerManager
             ChallengeId = config.ChallengeId.ToString()
         };
 
-        compose.services.Add("main", new
+        var mainService = new Dictionary<string, object>
         {
-            ports = new[] { $"0:{config.ExposedPort}" },
-            labels = labels,
-            mem_limit = $"{config.MemoryLimit}M",
-            cpus = config.CPUCount / 10.0,
+            { "ports", new[] { $"0:{config.ExposedPort}" } },
+            { "labels", labels },
+            { "mem_limit", $"{config.MemoryLimit}M" },
+            { "cpus", config.CPUCount / 10.0 },
             //// This only works if the backing storage is xfs+pquota, maybe try to query it somehow?
-            // storage_opt = new
-            // {
-            //    size = $"{config.StorageLimit}M"
-            // }
-        });
+            // { "storage_opt", new { size = $"{config.StorageLimit}M" } },
+        };
+
+        if (networks.Count != 0)
+            mainService["networks"] = networks;
+
+        compose.services.Add("main", mainService);
 
         foreach (var service in services)
         {
             if (service == "main")
                 continue;
 
-            var serviceObj = new
+            var serviceObj = new Dictionary<string, object>
             {
-                labels = labels,
-                mem_limit = $"{config.MemoryLimit}m",
-                cpus = config.CPUCount / 10.0,
-                //// Same as above
-                // storage_opt = new
-                // {
-                //     size = $"{config.StorageLimit}M"
-                // }
+                { "labels", labels },
+                { "mem_limit", $"{config.MemoryLimit}M" },
+                { "cpus", config.CPUCount / 10.0 },
+                //// This only works if the backing storage is xfs+pquota, maybe try to query it somehow?
+                // { "storage_opt", new { size = $"{config.StorageLimit}M" } },
             };
+
+            if (networks.Count != 0)
+                serviceObj["networks"] = networks;
 
             compose.services.Add(service, serviceObj);
         }
