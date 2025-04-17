@@ -116,7 +116,7 @@ public class DockerComposeManager : IContainerManager
         proc.EnableRaisingEvents = true;
 
         StringBuilder resBuilder = new StringBuilder();
-        DataReceivedEventHandler handler = (sender, data) => { resBuilder.AppendLine(data.Data); };
+        DataReceivedEventHandler handler = (sender, data) => { resBuilder.Append(data.Data).Append('\n'); };
         proc.OutputDataReceived += handler;
         proc.ErrorDataReceived += handler;
 
