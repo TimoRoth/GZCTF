@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 using System.Diagnostics;
 using Docker.DotNet;
 using GZCTF.Models.Internal;
@@ -38,9 +39,61 @@ public class DockerComposeManager : IContainerManager
         //TODO: Exception handling
         await LaunchHelper("docker",
             ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
-            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } }, tempDir.ToString(), container.Image, token);
+            new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri } }, tempDir.ToString(), container.Image, token);
 
         container.Status = ContainerStatus.Destroyed;
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0037")]
+    private async Task GenerateComposeOverride(string filename, List<string> services, ContainerConfig config, CancellationToken token = default)
+    {
+        var compose = new
+        {
+            services = new Dictionary<string, object>()
+        };
+
+        var labels = new
+        {
+            TeamId = config.TeamId,
+            UserId = config.UserId.ToString(),
+            ChallengeId = config.ChallengeId.ToString()
+        };
+
+        compose.services.Add("main", new
+        {
+            ports = new[] { $"0:{config.ExposedPort}" },
+            labels = labels,
+            mem_limit = $"{config.MemoryLimit}M",
+            cpus = config.CPUCount / 10.0,
+            //// This only works if the backing storage is xfs+pquota, maybe try to query it somehow?
+            // storage_opt = new
+            // {
+            //    size = $"{config.StorageLimit}M"
+            // }
+        });
+
+        foreach (var service in services)
+        {
+            if (service == "main")
+                continue;
+
+            var serviceObj = new
+            {
+                labels = labels,
+                mem_limit = $"{config.MemoryLimit}m",
+                cpus = config.CPUCount / 10.0,
+                //// Same as above
+                // storage_opt = new
+                // {
+                //     size = $"{config.StorageLimit}M"
+                // }
+            };
+
+            compose.services.Add(service, serviceObj);
+        }
+
+        string json = JsonSerializer.Serialize(compose);
+        await File.WriteAllTextAsync(filename, json, token);
     }
 
     public async Task<Models.Data.Container?> CreateContainerAsync(ContainerConfig config, CancellationToken token = default)
@@ -56,31 +109,32 @@ public class DockerComposeManager : IContainerManager
 
         //TODO: Exception handling
         var services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
-            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } },
+            new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri } },
             tempDir.ToString(), config.Image, token);
 
         if (!services.Contains("main"))
             throw new Exception("No 'main' service in compose file."); // TODO: non-generic exception
 
+        string preludeFile = Path.Combine(tempDir.Path.ToString(), "override.json");
+        await GenerateComposeOverride(preludeFile, services, config, token);
+
         //TODO: Exception handling
         await LaunchHelper("docker",
-            ["compose", "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
-            new Dictionary<string, string>
+            ["compose", "--file", preludeFile, "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
+            new Dictionary<string, string?>
             {
                 { "DOCKER_HOST", _meta.Config.Uri },
                 { "CPU_COUNT", (config.CPUCount / 10.0).ToString() },
                 { "MEM_LIMIT", (config.MemoryLimit * 1024 * 1024).ToString() },
                 { "NET_MODE", _meta.Config.ChallengeNetwork ?? "default" },
                 { "GZCTF_TEAM_ID", config.TeamId },
-                { "GZCTF_USER_ID", config.UserId.ToString() }, //TODO: some of these need to be set as labels in the compose file, consider generating an override file somehow
-                { "GZCTF_CHALLENGE_ID", config.ChallengeId.ToString() },
-                { "GZCTF_FLAG", config.Flag ?? "" },
+                { "GZCTF_FLAG", config.Flag },
             },
             tempDir.ToString(), config.Image, token);
 
         //TODO: Exception handling
         var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
-            new Dictionary<string, string> { { "DOCKER_HOST", _meta.Config.Uri } },
+            new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri } },
             tempDir.ToString(), config.Image, token);
         if (mainIds.Count != 1)
             throw new Exception("Unexpected container id output."); // TODO: non-generic exception
@@ -137,7 +191,7 @@ public class DockerComposeManager : IContainerManager
         return container;
     }
 
-    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string> env, string workdir = "", string? input = null, CancellationToken token = default)
+    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string?> env, string workdir = "", string? input = null, CancellationToken token = default)
     {
         command = ResolvePath(command);
 
@@ -157,7 +211,8 @@ public class DockerComposeManager : IContainerManager
             proc.StartInfo.ArgumentList.Add(arg);
 
         foreach (var pair in env)
-            proc.StartInfo.Environment.Add(pair.Key, pair.Value);
+            if (pair.Value != null)
+                proc.StartInfo.Environment.Add(pair.Key, pair.Value);
 
         proc.EnableRaisingEvents = true;
 
