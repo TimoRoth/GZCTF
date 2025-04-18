@@ -46,13 +46,13 @@ public class DockerComposeManager : IContainerManager
         }
         catch (LaunchException le)
         {
-            _logger.SystemLog($"Deleting compose container {container.ContainerId} failed with exit code {le.ExitCode}: {le.Message}",
+            _logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_ComposeDeletionFailedResponse), container.ContainerId, le.ExitCode, le.Message],
                 TaskStatus.Failed, LogLevel.Error);
             return;
         }
         catch (Exception e)
         {
-            _logger.LogErrorMessage(e, $"Failed deleting compose container {container.ContainerId}");
+            _logger.LogErrorMessage(e, StaticLocalizer[nameof(Resources.Program.ContainerManager_ComposeDeletionFailed), container.ContainerId]);
             return;
         }
 
@@ -147,7 +147,7 @@ public class DockerComposeManager : IContainerManager
 
             if (!services.Contains("main"))
             {
-                _logger.SystemLog($"Compose file for challenge {config.ChallengeId} contains no main service.", TaskStatus.Failed, LogLevel.Warning);
+                _logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_ComposeNoMainService), config.ChallengeId], TaskStatus.Failed, LogLevel.Warning);
                 return null;
             }
 
@@ -166,7 +166,8 @@ public class DockerComposeManager : IContainerManager
         }
         catch (LaunchException le)
         {
-            _logger.SystemLog($"Docker command failed with exit code {le.ExitCode}: {le.Message}", TaskStatus.Failed, LogLevel.Error);
+            _logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_DockerCommandFailed), le.ExitCode, le.Message],
+                TaskStatus.Failed, LogLevel.Error);
             return null;
         }
 
@@ -191,7 +192,8 @@ public class DockerComposeManager : IContainerManager
         }
         catch (LaunchException le)
         {
-            _logger.SystemLog($"Launching compose file failed({le.ExitCode}): {le.Message}", TaskStatus.Failed, LogLevel.Warning);
+            _logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_ComposeCreationFailed), config.ChallengeId, le.ExitCode, le.Message],
+                TaskStatus.Failed, LogLevel.Warning);
             return null;
         }
 
@@ -204,7 +206,8 @@ public class DockerComposeManager : IContainerManager
                 defaultEnv, tempDir.ToString(), config.Image, token);
             if (mainIds.Count != 1)
             {
-                _logger.SystemLog("Unexpected container IDs returned by docker compose.", TaskStatus.Failed, LogLevel.Error);
+                _logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_ComposeUnexpectedIDs)],
+                    TaskStatus.Failed, LogLevel.Error);
 
                 await DestroyContainerAsync(container, token);
                 return null;
@@ -214,7 +217,8 @@ public class DockerComposeManager : IContainerManager
         }
         catch (LaunchException le)
         {
-            _logger.SystemLog($"Docker command failed with exit code {le.ExitCode}: {le.Message}", TaskStatus.Failed, LogLevel.Error);
+            _logger.SystemLog(StaticLocalizer[nameof(Resources.Program.ContainerManager_DockerCommandFailed), le.ExitCode, le.Message],
+                TaskStatus.Failed, LogLevel.Error);
 
             await DestroyContainerAsync(container, token);
             return null;
