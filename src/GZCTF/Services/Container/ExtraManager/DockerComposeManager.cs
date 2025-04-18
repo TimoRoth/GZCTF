@@ -120,16 +120,30 @@ public class DockerComposeManager : IContainerManager
 
         string name = $"{config.TeamId}_{config.ChallengeId}_{(config.Flag ?? Guid.NewGuid().ToString("N")).ToMD5String()[..16]}";
         using TempDir tempDir = new TempDir("gzdockertmp_");
-
-        //TODO: sign into registries
+        using TempDir loginDir = new TempDir();
+        var defaultEnv = new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri }, { "DOCKER_CONFIG", loginDir.ToString() } };
 
         //TODO: Exception handling
         var services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
-            new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri } },
-            tempDir.ToString(), config.Image, token);
+            defaultEnv, tempDir.ToString(), config.Image, token);
 
         if (!services.Contains("main"))
             throw new Exception("No 'main' service in compose file."); // TODO: non-generic exception
+
+        //TODO: Exception handling
+        var images = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--images"],
+            defaultEnv, tempDir.ToString(), config.Image, token);
+
+        foreach (var image in images)
+        {
+            var auth = _meta.AuthConfigs.GetForImage(image, out var registry);
+            if (auth is null)
+                continue;
+
+            //TODO: Exception handling
+            await LaunchHelper("docker", ["login", "--password-stdin", "--username", auth.Username, registry],
+                defaultEnv, tempDir.ToString(), auth.Password, token);
+        }
 
         string preludeFile = Path.Combine(tempDir.Path.ToString(), "override.json");
         await GenerateComposeOverride(preludeFile, services, config, token);
@@ -140,6 +154,7 @@ public class DockerComposeManager : IContainerManager
             new Dictionary<string, string?>
             {
                 { "DOCKER_HOST", _meta.Config.Uri },
+                { "DOCKER_CONFIG", loginDir.ToString() },
                 { "CPU_COUNT", (config.CPUCount / 10.0).ToString() },
                 { "MEM_LIMIT", (config.MemoryLimit * 1024 * 1024).ToString() },
                 { "NET_MODE", _meta.Config.ChallengeNetwork ?? "default" },
@@ -150,8 +165,7 @@ public class DockerComposeManager : IContainerManager
 
         //TODO: Exception handling
         var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
-            new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri } },
-            tempDir.ToString(), config.Image, token);
+            defaultEnv, tempDir.ToString(), config.Image, token);
         if (mainIds.Count != 1)
             throw new Exception("Unexpected container id output."); // TODO: non-generic exception
 
