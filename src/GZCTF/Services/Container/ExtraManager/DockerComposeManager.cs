@@ -313,7 +313,7 @@ public class DockerComposeManager : IContainerManager
             await proc.WaitForExitAsync(token);
 
             if (proc.ExitCode != 0)
-                throw new LaunchException(proc.ExitCode, $"{command} {String.Join(' ', arguments)}\n{String.Join('\n', res)}");
+                throw new LaunchException(proc.ExitCode, $"{command} {String.Join(' ', arguments)}{Environment.NewLine}{String.Join(Environment.NewLine, res)}");
 
             return res;
         }
