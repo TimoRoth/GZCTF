@@ -190,7 +190,7 @@ public class DockerComposeManager : IContainerManager
 
         var port = info.NetworkSettings.Ports
             .FirstOrDefault(p =>
-                p.Key.StartsWith(config.ExposedPort.ToString())
+                p.Key.StartsWith(config.ExposedPort.ToString() + "/") || p.Key == config.ExposedPort.ToString()
             ).Value.First().HostPort;
 
         if (int.TryParse(port, out var numPort))
