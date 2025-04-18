@@ -39,7 +39,7 @@ public class DockerComposeManager : IContainerManager
             using TempDir tempDir = new TempDir("gzdockertmp_");
             using TempDir loginDir = new TempDir();
 
-            await LaunchHelper("docker",
+            await RunCommand("docker",
                 ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
                 new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri }, { "DOCKER_CONFIG", loginDir.ToString() } },
                 tempDir.ToString(), container.Image, token);
@@ -142,7 +142,7 @@ public class DockerComposeManager : IContainerManager
 
         try
         {
-            services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
+            services = await RunCommand("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
                 defaultEnv, tempDir.ToString(), config.Image, token);
 
             if (!services.Contains("main"))
@@ -151,7 +151,7 @@ public class DockerComposeManager : IContainerManager
                 return null;
             }
 
-            var images = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--images"],
+            var images = await RunCommand("docker", ["compose", "--file", "-", "--project-name", name, "config", "--images"],
                 defaultEnv, tempDir.ToString(), config.Image, token);
 
             foreach (var image in images)
@@ -160,7 +160,7 @@ public class DockerComposeManager : IContainerManager
                 if (auth is null)
                     continue;
 
-                await LaunchHelper("docker", ["login", "--password-stdin", "--username", auth.Username, registry],
+                await RunCommand("docker", ["login", "--password-stdin", "--username", auth.Username, registry],
                     defaultEnv, tempDir.ToString(), auth.Password, token);
             }
         }
@@ -176,7 +176,7 @@ public class DockerComposeManager : IContainerManager
 
         try
         {
-            await LaunchHelper("docker",
+            await RunCommand("docker",
                 ["compose", "--file", preludeFile, "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
                 new Dictionary<string, string?>
                 {
@@ -202,7 +202,7 @@ public class DockerComposeManager : IContainerManager
 
         try
         {
-            var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
+            var mainIds = await RunCommand("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
                 defaultEnv, tempDir.ToString(), config.Image, token);
             if (mainIds.Count != 1)
             {
@@ -270,7 +270,7 @@ public class DockerComposeManager : IContainerManager
         return container;
     }
 
-    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string?>? env = null, string workdir = "", string? input = null, CancellationToken token = default)
+    private async Task<List<string>> RunCommand(string command, string[] arguments, Dictionary<string, string?>? env = null, string workdir = "", string? input = null, CancellationToken token = default)
     {
         command = ResolvePath(command);
 
