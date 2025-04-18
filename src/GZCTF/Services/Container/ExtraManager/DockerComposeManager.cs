@@ -34,12 +34,27 @@ public class DockerComposeManager : IContainerManager
             return;
         }
 
-        using TempDir tempDir = new TempDir("gzdockertmp_");
+        try
+        {
+            using TempDir tempDir = new TempDir("gzdockertmp_");
+            using TempDir loginDir = new TempDir();
 
-        //TODO: Exception handling
-        await LaunchHelper("docker",
-            ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
-            new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri } }, tempDir.ToString(), container.Image, token);
+            await LaunchHelper("docker",
+                ["compose", "--file", "-", "--project-name", container.ContainerId, "--progress", "plain", "down", "--remove-orphans", "--volumes"],
+                new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri }, { "DOCKER_CONFIG", loginDir.ToString() } },
+                tempDir.ToString(), container.Image, token);
+        }
+        catch (LaunchException le)
+        {
+            _logger.SystemLog($"Deleting compose container {container.ContainerId} failed with exit code {le.ExitCode}: {le.Message}",
+                TaskStatus.Failed, LogLevel.Error);
+            return;
+        }
+        catch (Exception e)
+        {
+            _logger.LogErrorMessage(e, $"Failed deleting compose container {container.ContainerId}");
+            return;
+        }
 
         container.Status = ContainerStatus.Destroyed;
     }
@@ -123,36 +138,47 @@ public class DockerComposeManager : IContainerManager
         using TempDir loginDir = new TempDir();
         var defaultEnv = new Dictionary<string, string?> { { "DOCKER_HOST", _meta.Config.Uri }, { "DOCKER_CONFIG", loginDir.ToString() } };
 
-        //TODO: Exception handling
-        var services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
-            defaultEnv, tempDir.ToString(), config.Image, token);
+        List<string> services;
 
-        if (!services.Contains("main"))
-            throw new Exception("No 'main' service in compose file."); // TODO: non-generic exception
-
-        //TODO: Exception handling
-        var images = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--images"],
-            defaultEnv, tempDir.ToString(), config.Image, token);
-
-        foreach (var image in images)
+        try
         {
-            var auth = _meta.AuthConfigs.GetForImage(image, out var registry);
-            if (auth is null)
-                continue;
+            services = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--services"],
+                defaultEnv, tempDir.ToString(), config.Image, token);
 
-            //TODO: Exception handling
-            await LaunchHelper("docker", ["login", "--password-stdin", "--username", auth.Username, registry],
-                defaultEnv, tempDir.ToString(), auth.Password, token);
+            if (!services.Contains("main"))
+            {
+                _logger.SystemLog($"Compose file for challenge {config.ChallengeId} contains no main service.", TaskStatus.Failed, LogLevel.Warning);
+                return null;
+            }
+
+            var images = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "config", "--images"],
+                defaultEnv, tempDir.ToString(), config.Image, token);
+
+            foreach (var image in images)
+            {
+                var auth = _meta.AuthConfigs.GetForImage(image, out var registry);
+                if (auth is null)
+                    continue;
+
+                await LaunchHelper("docker", ["login", "--password-stdin", "--username", auth.Username, registry],
+                    defaultEnv, tempDir.ToString(), auth.Password, token);
+            }
+        }
+        catch (LaunchException le)
+        {
+            _logger.SystemLog($"Docker command failed with exit code {le.ExitCode}: {le.Message}", TaskStatus.Failed, LogLevel.Error);
+            return null;
         }
 
         string preludeFile = Path.Combine(tempDir.Path.ToString(), "override.json");
         await GenerateComposeOverride(preludeFile, services, config, token);
 
-        //TODO: Exception handling
-        await LaunchHelper("docker",
-            ["compose", "--file", preludeFile, "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
-            new Dictionary<string, string?>
-            {
+        try
+        {
+            await LaunchHelper("docker",
+                ["compose", "--file", preludeFile, "--file", "-", "--project-name", name, "--progress", "plain", "up", "-d", "--wait", "--pull", "missing"],
+                new Dictionary<string, string?>
+                {
                 { "DOCKER_HOST", _meta.Config.Uri },
                 { "DOCKER_CONFIG", loginDir.ToString() },
                 { "CPU_COUNT", (config.CPUCount / 10.0).ToString() },
@@ -160,27 +186,46 @@ public class DockerComposeManager : IContainerManager
                 { "NET_MODE", _meta.Config.ChallengeNetwork ?? "default" },
                 { "GZCTF_TEAM_ID", config.TeamId },
                 { "GZCTF_FLAG", config.Flag },
-            },
-            tempDir.ToString(), config.Image, token);
-
-        //TODO: Exception handling
-        var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
-            defaultEnv, tempDir.ToString(), config.Image, token);
-        if (mainIds.Count != 1)
-            throw new Exception("Unexpected container id output."); // TODO: non-generic exception
-
-        var info = await _client.Containers.InspectContainerAsync(mainIds[0], token);
-
-        Models.Data.Container container = new Models.Data.Container
+                },
+                tempDir.ToString(), config.Image, token);
+        }
+        catch (LaunchException le)
         {
-            ContainerId = name,
-            Image = config.Image,
-            IP = info.NetworkSettings.Networks.FirstOrDefault().Value.IPAddress,
-            Port = config.ExposedPort,
-            IsProxy = !_meta.ExposePort,
-            StartedAt = DateTimeOffset.Parse(info.State.StartedAt),
-        };
+            _logger.SystemLog($"Launching compose file failed({le.ExitCode}): {le.Message}", TaskStatus.Failed, LogLevel.Warning);
+            return null;
+        }
 
+        Models.Data.Container container = new Models.Data.Container { ContainerId = name, Image = config.Image };
+        string mainId;
+
+        try
+        {
+            var mainIds = await LaunchHelper("docker", ["compose", "--file", "-", "--project-name", name, "ps", "-q", "main"],
+                defaultEnv, tempDir.ToString(), config.Image, token);
+            if (mainIds.Count != 1)
+            {
+                _logger.SystemLog("Unexpected container IDs returned by docker compose.", TaskStatus.Failed, LogLevel.Error);
+
+                await DestroyContainerAsync(container, token);
+                return null;
+            }
+
+            mainId = mainIds[0];
+        }
+        catch (LaunchException le)
+        {
+            _logger.SystemLog($"Docker command failed with exit code {le.ExitCode}: {le.Message}", TaskStatus.Failed, LogLevel.Error);
+
+            await DestroyContainerAsync(container, token);
+            return null;
+        }
+
+        var info = await _client.Containers.InspectContainerAsync(mainId, token);
+
+        container.IP = info.NetworkSettings.Networks.FirstOrDefault().Value.IPAddress;
+        container.Port = config.ExposedPort;
+        container.IsProxy = !_meta.ExposePort;
+        container.StartedAt = DateTimeOffset.Parse(info.State.StartedAt);
         container.ExpectStopAt = container.StartedAt + TimeSpan.FromHours(2);
 
         container.Status = info.State.Dead || info.State.OOMKilled || info.State.Restarting
