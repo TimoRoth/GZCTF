@@ -221,7 +221,7 @@ public class DockerComposeManager : IContainerManager
         return container;
     }
 
-    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string?> env, string workdir = "", string? input = null, CancellationToken token = default)
+    private async Task<List<string>> LaunchHelper(string command, string[] arguments, Dictionary<string, string?>? env = null, string workdir = "", string? input = null, CancellationToken token = default)
     {
         command = ResolvePath(command);
 
@@ -240,7 +240,7 @@ public class DockerComposeManager : IContainerManager
         foreach (string arg in arguments)
             proc.StartInfo.ArgumentList.Add(arg);
 
-        foreach (var pair in env)
+        foreach (var pair in env ?? [])
             if (pair.Value != null)
                 proc.StartInfo.Environment.Add(pair.Key, pair.Value);
 
