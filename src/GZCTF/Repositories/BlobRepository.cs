@@ -29,6 +29,12 @@ public class BlobRepository(AppDbContext context, ILogger<BlobRepository> logger
         return await StoreBlob(fileName ?? file.FileName, tmp, token);
     }
 
+    public Task<LocalFile> CreateOrUpdateBlob(Stream content, string fileName,
+        CancellationToken token = default)
+    {
+        return StoreBlob(fileName, content, token);
+    }
+
     public async Task<LocalFile?> CreateOrUpdateImage(IFormFile file, string fileName,
         int resize = 300,
         CancellationToken token = default)
