@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using NSwag.Annotations;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.Converters;
 using YamlDotNet.Serialization.NamingConventions;
@@ -139,7 +140,15 @@ public class ImportExportController(
             .WithTypeConverter(new DateTimeConverter())
             .Build();
 
-        var data = deserializer.Deserialize<Dictionary<string, GameExportModel>>(model.Data);
+        Dictionary<string, GameExportModel> data;
+        try
+        {
+            data = deserializer.Deserialize<Dictionary<string, GameExportModel>>(model.Data);
+        }
+        catch (YamlException e)
+        {
+            return UnprocessableEntity(new RequestResponse(e.Message, StatusCodes.Status422UnprocessableEntity));
+        }
 
         GameExportModel gameModel;
         try
@@ -221,7 +230,15 @@ public class ImportExportController(
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .Build();
 
-        var data = deserializer.Deserialize<Dictionary<string, ChallengeExportModel>>(model.Data);
+        Dictionary<string, ChallengeExportModel> data;
+        try
+        {
+            data = deserializer.Deserialize<Dictionary<string, ChallengeExportModel>>(model.Data);
+        }
+        catch (YamlException e)
+        {
+            return UnprocessableEntity(new RequestResponse(e.Message, StatusCodes.Status422UnprocessableEntity));
+        }
 
         ChallengeExportModel challengeModel;
         try
