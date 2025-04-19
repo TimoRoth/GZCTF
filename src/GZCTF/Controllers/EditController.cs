@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using NSwag.Annotations;
 using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.Converters;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace GZCTF.Controllers;
@@ -179,6 +180,44 @@ public class EditController(
                 StatusCodes.Status404NotFound));
 
         return Ok(GameInfoModel.FromGame(game));
+    }
+
+    /// <summary>
+    /// Get Game YAML export
+    /// </summary>
+    /// <remarks>
+    /// Retrieving a game requires administrator privileges
+    /// </remarks>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully retrieved game</response>
+    [HttpGet("Games/{id:int}/Export")]
+    [ProducesResponseType(typeof(DataExportModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetGameExport([FromRoute] int id, CancellationToken token)
+    {
+        var game = await gameRepository.GetGameById(id, token);
+
+        if (game is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        await gameRepository.LoadChallenges(game, token);
+        foreach (var challenge in game.Challenges)
+            await challengeRepository.LoadFlags(challenge, token);
+
+        var dataObj = new
+        {
+            Game = await GameExportModel.FromGame(game, blobStorage, token)
+        };
+
+        var yaml = new SerializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull | DefaultValuesHandling.OmitEmptyCollections)
+            .WithTypeConverter(new DateTimeOffsetConverter())
+            .Build();
+
+        return Ok(new DataExportModel { Data = yaml.Serialize(dataObj) });
     }
 
     /// <summary>
