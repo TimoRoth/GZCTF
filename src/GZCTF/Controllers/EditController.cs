@@ -663,6 +663,10 @@ public class EditController(
             return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
                 StatusCodes.Status404NotFound));
 
+        // Do not load flags for dynamic containers
+        if (challenge.Type != ChallengeType.DynamicContainer)
+            await challengeRepository.LoadFlags(challenge, token);
+
         var dataObj = new
         {
             Challenge = await ChallengeExportModel.FromChallenge(challenge, blobStorage, token)
