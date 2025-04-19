@@ -520,49 +520,7 @@ public class EditController(
         {
             var challenge = await challengeRepository.CreateChallenge(game, challengeModel.ToChallenge(), token);
 
-            if (challengeModel.Attachment is not null && challenge.Attachment?.Type != FileType.None)
-            {
-                var attachment = new AttachmentCreateModel { AttachmentType = challengeModel.Attachment.Type };
-
-                if (attachment.AttachmentType == FileType.Remote)
-                {
-                    attachment.RemoteUrl = challengeModel.Attachment.Url;
-                }
-                else if (attachment.AttachmentType == FileType.Local)
-                {
-                    using var stream = new MemoryStream(Convert.FromBase64String(challengeModel.Attachment.Data ?? ""));
-                    var file = await blobService.CreateOrUpdateBlob(stream, challengeModel.Attachment.Name ?? "UNNAMED_IMPORTED_FILE", token);
-
-                    attachment.FileHash = file.Hash;
-                }
-
-                await challengeRepository.UpdateAttachment(challenge, attachment, token);
-            }
-
-            FlagCreateModel[] flags = new FlagCreateModel[challengeModel.Flags?.Count ?? 0];
-            for (int i = 0; i < flags.Length; ++i)
-            {
-                var flagModel = challengeModel.Flags?[i]!;
-                var flag = flags[i] = new FlagCreateModel { Flag = flagModel.Flag ?? "UNNAMED_IMPORTED_FLAG" };
-
-                if (flagModel.Attachment?.Type == FileType.Remote)
-                {
-                    flag.AttachmentType = FileType.Remote;
-                    flag.RemoteUrl = flagModel.Attachment.Url;
-                }
-                else if (flagModel.Attachment?.Type == FileType.Local)
-                {
-                    using var stream = new MemoryStream(Convert.FromBase64String(flagModel.Attachment.Data ?? ""));
-                    var file = await blobService.CreateOrUpdateBlob(stream, flagModel.Attachment.Name ?? "UNNAMED_IMPORTED_FILE", token);
-
-                    flag.AttachmentType = FileType.Local;
-                    flag.FileHash = file.Hash;
-                }
-
-            }
-
-            if (flags.Length > 0)
-                await challengeRepository.AddFlags(challenge, flags, token);
+            await ProcessChallengeAttachments(challengeModel, challenge);
 
             await trans.CommitAsync(token);
 
@@ -573,6 +531,55 @@ public class EditController(
             await trans.RollbackAsync(token);
             throw;
         }
+    }
+
+    private async Task ProcessChallengeAttachments(ChallengeExportModel challengeModel, GameChallenge challenge, CancellationToken token = default)
+    {
+        if (challengeModel.Attachment is not null && challenge.Attachment?.Type != FileType.None)
+        {
+            var attachment = new AttachmentCreateModel { AttachmentType = challengeModel.Attachment.Type };
+
+            if (attachment.AttachmentType == FileType.Remote)
+            {
+                attachment.RemoteUrl = challengeModel.Attachment.Url;
+            }
+            else if (attachment.AttachmentType == FileType.Local)
+            {
+                using var stream = new MemoryStream(Convert.FromBase64String(challengeModel.Attachment.Data ?? ""));
+                var file = await blobService.CreateOrUpdateBlob(stream, challengeModel.Attachment.Name ?? "UNNAMED_IMPORTED_FILE", token);
+
+                attachment.FileHash = file.Hash;
+            }
+
+            await challengeRepository.UpdateAttachment(challenge, attachment, token);
+        }
+
+        FlagCreateModel[] flags = new FlagCreateModel[challengeModel.Flags?.Count ?? 0];
+        for (int i = 0; i < flags.Length; ++i)
+        {
+            var flagModel = challengeModel.Flags?[i];
+            if (flagModel is null)
+                continue;
+
+            var flag = flags[i] = new FlagCreateModel { Flag = flagModel.Flag ?? "UNNAMED_IMPORTED_FLAG" };
+
+            if (flagModel.Attachment?.Type == FileType.Remote)
+            {
+                flag.AttachmentType = FileType.Remote;
+                flag.RemoteUrl = flagModel.Attachment.Url;
+            }
+            else if (flagModel.Attachment?.Type == FileType.Local)
+            {
+                using var stream = new MemoryStream(Convert.FromBase64String(flagModel.Attachment.Data ?? ""));
+                var file = await blobService.CreateOrUpdateBlob(stream, flagModel.Attachment.Name ?? "UNNAMED_IMPORTED_FILE", token);
+
+                flag.AttachmentType = FileType.Local;
+                flag.FileHash = file.Hash;
+            }
+        }
+
+        if (flags.Length > 0)
+            await challengeRepository.AddFlags(challenge, flags, token);
     }
 
     /// <summary>
