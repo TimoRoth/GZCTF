@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
+using FluentStorage.Blobs;
 using GZCTF.Extensions;
 using GZCTF.Middlewares;
+using GZCTF.Models.Export;
 using GZCTF.Models.Request.Edit;
 using GZCTF.Models.Request.Game;
 using GZCTF.Models.Request.Info;
@@ -12,6 +14,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using NSwag.Annotations;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace GZCTF.Controllers;
 
@@ -36,6 +40,7 @@ public class EditController(
     IGameRepository gameRepository,
     IContainerManager containerService,
     IBlobRepository blobService,
+    IBlobStorage blobStorage,
     IStringLocalizer<Program> localizer) : Controller
 {
     /// <summary>
@@ -470,6 +475,50 @@ public class EditController(
     }
 
     /// <summary>
+    /// Import a game challenge from yaml
+    /// </summary>
+    /// <remarks>
+    /// Adding a game challenge requires administrator privileges
+    /// </remarks>
+    /// <param name="id">Game ID</param>
+    /// <param name="model"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully added game challenge</response>
+    /// <response code="422">Invalid YAML input</response>
+    [HttpPost("Games/{id:int}/Challenges/Import")]
+    [ProducesResponseType(typeof(ChallengeEditDetailModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ImportGameChallenge([FromRoute] int id, [FromBody] DataExportModel model,
+        CancellationToken token)
+    {
+        var game = await gameRepository.GetGameById(id, token);
+
+        if (game is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var deserializer = new DeserializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .Build();
+
+        var data = deserializer.Deserialize<Dictionary<string, ChallengeExportModel>>(model.Data);
+
+        try
+        {
+            var challengeElem = data.Single(k => string.Equals(k.Key, "challenge", StringComparison.OrdinalIgnoreCase));
+
+            var res = await challengeRepository.CreateChallenge(game, challengeElem.Value.ToChallenge(), token);
+
+            return Ok(ChallengeEditDetailModel.FromChallenge(res));
+        }
+        catch (InvalidOperationException)
+        {
+            return UnprocessableEntity();
+        }
+    }
+
+    /// <summary>
     /// Get All Game Challenges
     /// </summary>
     /// <remarks>
@@ -540,6 +589,46 @@ public class EditController(
             await challengeRepository.LoadFlags(challenge, token);
 
         return Ok(ChallengeEditDetailModel.FromChallenge(challenge));
+    }
+
+    /// <summary>
+    /// Get Game Challenge as Data Export
+    /// </summary>
+    /// <remarks>
+    /// Retrieving a game challenge requires administrator privileges
+    /// </remarks>
+    /// <param name="id">Game ID</param>
+    /// <param name="cId">Challenge ID</param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully exported game challenge</response>
+    [HttpGet("Games/{id:int}/Challenges/{cId:int}/Export")]
+    [ProducesResponseType(typeof(DataExportModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetGameChallengeExport([FromRoute] int id, [FromRoute] int cId, CancellationToken token)
+    {
+        var game = await gameRepository.GetGameById(id, token);
+
+        if (game is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Game_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var challenge = await challengeRepository.GetChallenge(id, cId, token);
+
+        if (challenge is null)
+            return NotFound(new RequestResponse(localizer[nameof(Resources.Program.Challenge_NotFound)],
+                StatusCodes.Status404NotFound));
+
+        var dataObj = new
+        {
+            Challenge = await ChallengeExportModel.FromChallenge(challenge, blobStorage, token)
+        };
+
+        var yaml = new SerializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull | DefaultValuesHandling.OmitEmptyCollections)
+            .Build();
+
+        return Ok(new DataExportModel { Data = yaml.Serialize(dataObj) });
     }
 
     /// <summary>
