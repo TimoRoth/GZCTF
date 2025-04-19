@@ -142,6 +142,78 @@ public class EditController(
     }
 
     /// <summary>
+    /// Add Game
+    /// </summary>
+    /// <remarks>
+    /// Adding a game requires administrator privileges
+    /// </remarks>
+    /// <param name="model"></param>
+    /// <param name="token"></param>
+    /// <response code="200">Successfully added game</response>
+    [HttpPost("Games/Import")]
+    [ProducesResponseType(typeof(GameInfoModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ImportGame([FromBody] DataExportModel model, CancellationToken token)
+    {
+        var deserializer = new DeserializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .WithTypeConverter(new DateTimeConverter())
+            .Build();
+
+        var data = deserializer.Deserialize<Dictionary<string, GameExportModel>>(model.Data);
+
+        GameExportModel gameModel;
+        try
+        {
+            gameModel = data.Single(k => string.Equals(k.Key, "game", StringComparison.OrdinalIgnoreCase)).Value;
+        }
+        catch (InvalidOperationException)
+        {
+            return UnprocessableEntity(new RequestResponse("No singular game item in imported data.", StatusCodes.Status422UnprocessableEntity));
+        }
+
+        var trans = await gameRepository.BeginTransactionAsync(token);
+
+        try
+        {
+            var game = await gameRepository.CreateGame(gameModel.ToGame(), token);
+            if (game is null)
+            {
+                await trans.RollbackAsync(token);
+                return BadRequest(new RequestResponse(localizer[nameof(Resources.Program.Game_CreationFailed)]));
+            }
+
+            foreach (var challengeModel in gameModel.Challenges ?? [])
+            {
+                var challenge = await challengeRepository.CreateChallenge(game, challengeModel.ToChallenge(), token);
+
+                await ProcessChallengeAttachments(challengeModel, challenge);
+            }
+
+            if (!string.IsNullOrWhiteSpace(gameModel.Poster))
+            {
+                using var stream = new MemoryStream(Convert.FromBase64String(gameModel.Poster));
+                var file = await blobService.CreateOrUpdateBlob(stream, "poster", token);
+
+                game.PosterHash = file.Hash;
+            }
+
+            await gameRepository.SaveAsync(token);
+
+            await trans.CommitAsync(token);
+
+            await cacheHelper.FlushRecentGamesCache(token);
+
+            return Ok(GameInfoModel.FromGame(game));
+        }
+        catch
+        {
+            await trans.RollbackAsync(token);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Get Game List
     /// </summary>
     /// <remarks>

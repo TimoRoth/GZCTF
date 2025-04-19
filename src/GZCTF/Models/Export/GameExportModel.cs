@@ -93,5 +93,27 @@ namespace GZCTF.Models.Export
 
             return res;
         }
+
+        internal Game ToGame() =>
+            new Game
+            {
+                Title = Title ?? string.Empty,
+                Hidden = Hidden ?? true,
+                Summary = Summary ?? string.Empty,
+                Content = Content ?? string.Empty,
+                AcceptWithoutReview = AcceptWithoutReview ?? false,
+                WriteupRequired = WriteupRequired ?? false,
+                InviteCode = InviteCode,
+                Divisions = Divisions,
+                TeamMemberCountLimit = TeamMemberCountLimit ?? 0,
+                ContainerCountLimit = ContainerCountLimit ?? 3,
+                StartTimeUtc = StartTimeUtc ?? DateTime.UtcNow,
+                EndTimeUtc = EndTimeUtc ?? (DateTime.UtcNow + TimeSpan.FromHours(2)),
+                WriteupDeadline = WriteupDeadline ?? ((EndTimeUtc ?? DateTime.UtcNow) + TimeSpan.FromHours(2)),
+                WriteupNote = WriteupNote ?? string.Empty,
+                BloodBonusValue = BloodBonusValue ?? BloodBonus.DefaultValue,
+                PracticeMode = PracticeMode ?? false,
+                // Challenges and Poster need to be handled externally
+            };
     }
 }
