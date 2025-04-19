@@ -511,8 +511,11 @@ public class EditController(
         }
         catch (InvalidOperationException)
         {
-            return UnprocessableEntity();
+            return UnprocessableEntity(new RequestResponse("No singular challenge item in imported data.", StatusCodes.Status422UnprocessableEntity));
         }
+
+        if (string.IsNullOrWhiteSpace(challengeModel.Title) || challengeModel.Type is null || challengeModel.Category is null)
+            return UnprocessableEntity(new RequestResponse("Incomplete challenge in imported data.", StatusCodes.Status422UnprocessableEntity));
 
         var trans = await challengeRepository.BeginTransactionAsync(token);
 

@@ -11,16 +11,16 @@ namespace GZCTF.Models.Export
     public class ChallengeExportModel
     {
         [MinLength(1, ErrorMessageResourceName = nameof(Resources.Program.Model_TitleTooShort), ErrorMessageResourceType = typeof(Resources.Program))]
-        public string Title { get; set; } = "~~~~UNSET~~~~";
+        public string? Title { get; set; }
 
         public string? Content { get; set; }
 
         [MaxLength(Limits.MaxFlagTemplateLength, ErrorMessageResourceName = nameof(Resources.Program.Model_FlagTooLong), ErrorMessageResourceType = typeof(Resources.Program))]
         public string? FlagTemplate { get; set; }
 
-        public ChallengeCategory Category { get; set; }
+        public ChallengeCategory? Category { get; set; }
 
-        public ChallengeType Type { get; set; }
+        public ChallengeType? Type { get; set; }
 
         public List<string>? Hints { get; set; }
 
@@ -59,10 +59,10 @@ namespace GZCTF.Models.Export
         internal GameChallenge ToChallenge() =>
             new GameChallenge
             {
-                Title = Title,
+                Title = Title ?? String.Empty,
                 Content = Content ?? String.Empty,
-                Category = Category,
-                Type = Type,
+                Category = Category ?? ChallengeCategory.Misc,
+                Type = Type ?? ChallengeType.StaticAttachment,
                 FlagTemplate = FlagTemplate,
                 Hints = Hints,
                 IsEnabled = IsEnabled ?? false,
