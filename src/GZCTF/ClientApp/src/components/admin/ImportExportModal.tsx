@@ -109,7 +109,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
-                accept=".yml,.yaml,.json,.txt,text/*"
+                accept=".yml,.yaml,.txt,text/*"
                 onChange={onFileChange}
               />
               <Button
