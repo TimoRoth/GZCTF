@@ -11,11 +11,12 @@ type Mode = 'import' | 'export'
 interface ImportExportModalProps extends ModalProps {
   mode: Mode
   onSubmitCB?: (text: string) => Promise<unknown> | void
+  title: string
   data?: string
 }
 
 export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
-  const { mode, onSubmitCB, data = '', ...modalProps } = props
+  const { mode, onSubmitCB, title, data = '', ...modalProps } = props
   const [text, setText] = useInputState(data)
   const [disabled, setDisabled] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -28,16 +29,10 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
     setDisabled(true)
     try {
       await onSubmitCB(text)
-      showNotification({
-        color: 'teal',
-        message: t('common.submitted_success'),
-        icon: <Icon path={mdiCheck} size={1} />,
-      })
-      modalProps.onClose();
     } catch {
       showNotification({
         color: 'red',
-        message: t('common.error.submit_failed'),
+        message: t('common.error.encountered'),
       })
     } finally {
       setDisabled(false)
@@ -49,13 +44,13 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
       await navigator.clipboard.writeText(text)
       showNotification({
         color: 'teal',
-        message: t('common.copied'),
+        message: t('common.messages.copied_to_clipboard'),
         icon: <Icon path={mdiContentCopy} size={1} />,
       })
     } catch (e) {
       showNotification({
         color: 'red',
-        message: t('common.error.copy_failed'),
+        message: t('common.error.encountered'),
       })
     }
   }
@@ -92,7 +87,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
   }
 
   return (
-    <Modal size="lg" title={t('common.text_modal')} {...modalProps}>
+    <Modal size="lg" title={title} {...modalProps}>
       <Stack>
         <Textarea
           autosize
@@ -101,7 +96,6 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
           value={text}
           onChange={setText}
           readOnly={mode === 'export'}
-          placeholder={t('common.textarea.placeholder')}
           w="100%"
         />
         <Group grow>
@@ -120,7 +114,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
                 disabled={disabled}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {t('common.open_file')}
+                {t('common.button.select_file')}
               </Button>
               <Button
                 fullWidth
@@ -128,7 +122,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
                 disabled={disabled}
                 onClick={onSend}
               >
-                {t('common.submit')}
+                {t('common.button.submit')}
               </Button>
             </>
           )}
@@ -145,7 +139,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
                 variant="default"
                 onClick={onSaveAs}
               >
-                {t('common.save_as')}
+                {t('common.button.download')}
               </Button>
               <Button
                 fullWidth
@@ -153,7 +147,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
                 disabled={disabled}
                 onClick={onCopy}
               >
-                {t('common.copy')}
+                {t('common.button.copy')}
               </Button>
             </>
           )}

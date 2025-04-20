@@ -7,9 +7,11 @@
   },
   "button": {
     "copy": "Copy to Clipboard",
+    "download": "Download",
     "reset": "Reset",
     "retry": "Retry",
     "select_file": "Select File",
+    "submit": "Submit",
     "try_again": "Try Again",
     "uploading": "Uploading"
   },
@@ -136,5 +138,8 @@
   "title": {
     "404": "The Nowhere",
     "about": "About"
+  },
+  "messages": {
+    "copied_to_clipboard": "Copied to clipboard"
   }
 }

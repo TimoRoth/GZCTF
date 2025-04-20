@@ -195,6 +195,7 @@ const Games: FC = () => {
         onClose={() => setImportOpened(false)}
         onSubmitCB={(text) => doImportGame(text)}
         mode="import"
+        title={t('admin.button.games.import')}
       />
     </AdminPage>
   )
