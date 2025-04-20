@@ -113,6 +113,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
                 onChange={onFileChange}
               />
               <Button
+                fullWidth
                 leftSection={<Icon path={mdiFileUpload} size={1} />}
                 variant="default"
                 disabled={disabled}
@@ -139,19 +140,19 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
               >
               </a>
               <Button
-                leftSection={<Icon path={mdiContentSave} size={1} />}
-                variant="default"
-                onClick={onSaveAs}
-              >
-                {t('common.button.download')}
-              </Button>
-              <Button
                 fullWidth
                 leftSection={<Icon path={mdiContentCopy} size={1} />}
                 disabled={disabled}
                 onClick={onCopy}
               >
                 {t('common.button.copy')}
+              </Button>
+              <Button
+                fullWidth
+                leftSection={<Icon path={mdiContentSave} size={1} />}
+                onClick={onSaveAs}
+              >
+                {t('common.button.download')}
               </Button>
             </>
           )}
