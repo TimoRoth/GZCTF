@@ -83,12 +83,14 @@ const Games: FC = () => {
       headProps={{ justify: 'apart' }}
       head={
         <>
-          <Button leftSection={<Icon path={mdiPlus} size={1} />} onClick={() => setCreateOpened(true)}>
-            {t('admin.button.games.new')}
-          </Button>
-          <Button leftSection={<Icon path={mdiImport} size={1} />} onClick={() => setImportOpened(true)}>
-            {t('admin.button.games.import')}
-          </Button>
+          <Group wrap="nowrap" gap="md">
+            <Button leftSection={<Icon path={mdiPlus} size={1} />} onClick={() => setCreateOpened(true)}>
+              {t('admin.button.games.new')}
+            </Button>
+            <Button leftSection={<Icon path={mdiImport} size={1} />} onClick={() => setImportOpened(true)}>
+              {t('admin.button.games.import')}
+            </Button>
+          </Group>
           <Group w="calc(100% - 9rem)" justify="right">
             <Text fw="bold" size="sm">
               <Trans
