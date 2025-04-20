@@ -214,7 +214,7 @@ public class ImportExportController(
     /// <response code="200">Successfully added game challenge</response>
     /// <response code="422">Invalid YAML input</response>
     [HttpPost("Import/Game/{id:int}/Challenge")]
-    [ProducesResponseType(typeof(ChallengeEditDetailModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ChallengeInfoModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(RequestResponse), StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> ImportGameChallenge([FromRoute] int id, [FromBody] DataExportModel model,
@@ -263,7 +263,7 @@ public class ImportExportController(
 
             await trans.CommitAsync(token);
 
-            return Ok(ChallengeEditDetailModel.FromChallenge(challenge));
+            return Ok(ChallengeInfoModel.FromChallenge(challenge));
         }
         catch
         {
