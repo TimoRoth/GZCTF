@@ -1959,6 +1959,14 @@ export interface SignatureVerifyModel {
   publicKey: string;
 }
 
+/** Data Import/Export Modal */
+export interface DataExportModel {
+  /**
+   * Import/Export data, usually YAML or JSON
+   */
+  data: string;
+}
+
 import { apiLanguage } from "@Utils/I18n";
 import type {
   AxiosInstance,
@@ -3404,6 +3412,71 @@ export class Api<
         body: data,
         type: ContentType.FormData,
         format: "json",
+        ...params,
+      }),
+  };
+  importExport = {
+    /**
+     * @description Import a game from YAML. Needs Admin.
+     *
+     * @tags Import
+     * @name ImportGame
+     * @summary Import Game
+     * @request POST:/api/import/game
+     */
+    importGame: (data: DataExportModel, params: RequestParams = {}) =>
+      this.request<GameInfoModel, RequestResponse>({
+        path: `/api/import/game`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Import a challenge from YAML. Needs Admin.
+     *
+     * @tags Import
+     * @name ImportGameChallenge
+     * @summary Import Game
+     * @request POST:/api/import/game
+     */
+    importGameChallenge: (id: number, data: DataExportModel, params: RequestParams = {}) =>
+      this.request<ChallengeInfoModel, RequestResponse>({
+        path: `/api/import/game/${id}/challenge`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * @description Export a game to YAML. Needs Admin.
+     *
+     * @tags Export
+     * @name ExportGame
+     * @summary Export Game
+     * @request POST:/api/export/game/{id}
+     */
+    exportGame: (id: number, params: RequestParams = {}) =>
+      this.request<DataExportModel, RequestResponse>({
+        path: `/api/export/game/${id}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * @description Export a challenge to YAML. Needs Admin.
+     *
+     * @tags Export
+     * @name ExportGameChallenge
+     * @summary Export Challenge
+     * @request POST:/api/export/game/{id}/challenge/{cId}
+     */
+    exportGameChallenge: (id: number, cId: number, params: RequestParams = {}) =>
+      this.request<DataExportModel, RequestResponse>({
+        path: `/api/export/game/${id}/challenge/${cId}`,
+        method: "GET",
         ...params,
       }),
   };
