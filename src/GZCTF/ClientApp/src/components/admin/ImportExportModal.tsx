@@ -1,9 +1,9 @@
 import { Button, Modal, ModalProps, Stack, Textarea, Group } from '@mantine/core'
 import { useInputState } from '@mantine/hooks'
 import { showNotification } from '@mantine/notifications'
-import { mdiCheck, mdiContentCopy, mdiSend, mdiFileUpload, mdiContentSave } from '@mdi/js'
+import { mdiContentCopy, mdiSend, mdiFileUpload, mdiContentSave } from '@mdi/js'
 import { Icon } from '@mdi/react'
-import { FC, useState, useRef, ChangeEvent } from 'react'
+import { FC, useState, useRef, useEffect, ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 type Mode = 'import' | 'export'
@@ -23,6 +23,10 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
   const downloadLinkRef = useRef<HTMLAnchorElement>(null)
 
   const { t } = useTranslation()
+
+  useEffect(() => {
+    setText(data)
+  }, [data])
 
   const onSend = async () => {
     if (!onSubmitCB) return
