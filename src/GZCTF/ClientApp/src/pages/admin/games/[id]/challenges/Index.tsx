@@ -1,12 +1,13 @@
 import { Button, Center, ComboboxItem, Group, ScrollArea, Select, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useModals } from '@mantine/modals'
 import { showNotification } from '@mantine/notifications'
-import { mdiCheck, mdiHexagonSlice6, mdiPlus, mdiRefresh } from '@mdi/js'
+import { mdiCheck, mdiHexagonSlice6, mdiPlus, mdiRefresh, mdiImport } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import { Dispatch, FC, SetStateAction, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
+import { useParams, useNavigate } from 'react-router'
 import { BloodBonusModel } from '@Components/admin/BloodBonusModel'
+import { ImportExportModal } from '@Components/admin/ImportExportModal'
 import { ChallengeCreateModal } from '@Components/admin/ChallengeCreateModal'
 import { ChallengeEditCard } from '@Components/admin/ChallengeEditCard'
 import { WithGameEditTab } from '@Components/admin/WithGameEditTab'
@@ -21,10 +22,12 @@ const GameChallengeEdit: FC = () => {
 
   const [createOpened, setCreateOpened] = useState(false)
   const [bonusOpened, setBonusOpened] = useState(false)
+  const [importOpened, setImportOpened] = useState(false)
   const [category, setCategory] = useState<ChallengeCategory | null>(null)
   const challengeCategoryLabelMap = useChallengeCategoryLabelMap()
   const [disabled, setDisabled] = useState(false)
 
+  const navigate = useNavigate()
   const { t } = useTranslation()
 
   const { challenges, mutate } = useEditChallenges(numId)
@@ -32,6 +35,11 @@ const GameChallengeEdit: FC = () => {
   const filteredChallenges = category && challenges ? challenges?.filter((c) => c.category === category) : challenges
 
   const modals = useModals()
+
+  const doImportChallenge = async (text: string) => {
+    const chalResp = await api.importExport.importGameChallenge(numId, { data: text })
+    navigate(`/admin/games/${numId}/challenges/${chalResp.data.id}`);
+  }
 
   const onToggle = (challenge: ChallengeInfoModel, setDisabled: Dispatch<SetStateAction<boolean>>) => {
     modals.openConfirmModal({
@@ -116,6 +124,9 @@ const GameChallengeEdit: FC = () => {
             <Button leftSection={<Icon path={mdiHexagonSlice6} size={1} />} onClick={() => setBonusOpened(true)}>
               {t('admin.button.challenges.bonus')}
             </Button>
+            <Button leftSection={<Icon path={mdiImport} size={1} />} onClick={() => setImportOpened(true)}>
+              {t('admin.button.challenges.import')}
+            </Button>
             <Button mr="18px" leftSection={<Icon path={mdiPlus} size={1} />} onClick={() => setCreateOpened(true)}>
               {t('admin.button.challenges.new')}
             </Button>
@@ -152,6 +163,13 @@ const GameChallengeEdit: FC = () => {
         size="30%"
         opened={bonusOpened}
         onClose={() => setBonusOpened(false)}
+      />
+      <ImportExportModal
+        opened={importOpened}
+        onClose={() => setImportOpened(false)}
+        onSubmitCB={(text) => doImportChallenge(text)}
+        mode="import"
+        title={t('admin.button.challenges.import')}
       />
     </WithGameEditTab>
   )
