@@ -45,7 +45,8 @@
       "copy_public_key": "Copy Public Key",
       "delete": "Delete",
       "new": "New Game",
-      "import": "Import Game"
+      "import": "Import Game",
+      "export": "Export Game"
     },
     "notices": {
       "delete": "Delete",
