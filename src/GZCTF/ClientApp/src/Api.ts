@@ -1898,7 +1898,7 @@ export interface ClientCaptchaInfoModel {
   siteKey?: string;
 }
 
-export interface ContainerProvider {
+export interface ContainerProviderModel {
   /** Type of the container backend in use */
   type?: ContainerProviderType;
 }
@@ -2583,7 +2583,7 @@ export class Api<
      * @request GET:/api/admin/containerprovider
      */
     adminGetContainerProvider: (params: RequestParams = {}) =>
-      this.request<ContainerProvider, RequestResponse>({
+      this.request<ContainerProviderModel, RequestResponse>({
         path: `/api/admin/containerprovider`,
         method: "GET",
         format: "json",
