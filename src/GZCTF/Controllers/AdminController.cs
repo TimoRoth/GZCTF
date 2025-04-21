@@ -49,15 +49,15 @@ public class AdminController(
     /// <response code="401">Unauthorized user</response>
     /// <response code="403">Forbidden</response>
     [HttpGet("ContainerProvider")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ContainerProviderModel), StatusCodes.Status200OK)]
     public IActionResult GetContainerProvider()
     {
-        // always reload, ensure latest
-        configService.ReloadConfig();
+        ContainerProviderModel containerProvider = new()
+        {
+            Type = serviceProvider.GetRequiredService<IOptionsSnapshot<ContainerProvider>>().Value.Type
+        };
 
-        var providerType = serviceProvider.GetRequiredService<IOptionsSnapshot<ContainerProvider>>().Value.Type;
-
-        return Ok(new { Type = Enum.GetName<ContainerProviderType>(providerType) });
+        return Ok(containerProvider);
     }
 
     /// <summary>
