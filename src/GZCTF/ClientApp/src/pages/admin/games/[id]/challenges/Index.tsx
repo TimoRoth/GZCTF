@@ -37,7 +37,7 @@ const GameChallengeEdit: FC = () => {
   const modals = useModals()
 
   const doImportChallenge = async (text: string) => {
-    const chalResp = await api.importExport.importGameChallenge(numId, { data: text })
+    const chalResp = await api.importExport.importExportImportGameChallenge(numId, { data: text })
     navigate(`/admin/games/${numId}/challenges/${chalResp.data.id}`);
   }
 

@@ -177,8 +177,8 @@ const GameInfoEdit: FC = () => {
   const onExport = async () => {
     try {
       setDisabled(true)
-      const exportRes = await api.importExport.exportGame(numId);
-      setExportedData(exportRes.data.data)
+      const exportRes = await api.importExport.importExportExportGame(numId);
+      setExportedData(exportRes.data.data ?? '')
       setExportOpened(true)
     } finally {
       setDisabled(false);

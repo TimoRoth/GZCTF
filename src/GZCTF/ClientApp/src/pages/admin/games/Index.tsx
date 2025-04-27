@@ -12,7 +12,7 @@ import { ImportExportModal } from '@Components/admin/ImportExportModal'
 import { showErrorMsg } from '@Utils/Shared'
 import { useArrayResponse } from '@Hooks/useArrayResponse'
 import { getGameStatus } from '@Hooks/useGame'
-import api, { GameInfoModel, DataExportModel } from '@Api'
+import api, { GameInfoModel } from '@Api'
 import misc from '@Styles/Misc.module.css'
 import tableClasses from '@Styles/Table.module.css'
 
@@ -30,7 +30,7 @@ const Games: FC = () => {
   const { t } = useTranslation()
 
   const doImportGame = async (text: string) => {
-    const gameResp = await api.importExport.importGame({ data: text })
+    const gameResp = await api.importExport.importExportImportGame({ data: text })
     navigate(`/admin/games/${gameResp.data.id}/info`);
   }
 
