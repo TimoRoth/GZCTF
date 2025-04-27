@@ -114,6 +114,12 @@ export enum ParticipationStatus {
   Unsubmitted = "Unsubmitted",
 }
 
+export enum ContainerProviderType {
+  Docker = "Docker",
+  Kubernetes = "Kubernetes",
+  DockerCompose = "DockerCompose",
+}
+
 /** User role enumeration */
 export enum Role {
   Banned = "Banned",
@@ -326,6 +332,12 @@ export interface ProfileUserInfoModel {
   avatar?: string | null;
   /** User role */
   role?: Role | null;
+}
+
+/** Global Container Provider Settings */
+export interface ContainerProviderModel {
+  /** Container Provider Type */
+  type?: ContainerProviderType;
 }
 
 /** Global configuration update */
@@ -1824,6 +1836,12 @@ export interface BasicWriteupInfoModel {
   note?: string;
 }
 
+/** Generic Data Import/Export Model */
+export interface DataExportModel {
+  /** The serialized data of the thing to export/import */
+  data?: string;
+}
+
 /** Post information */
 export interface PostInfoModel {
   /**
@@ -1898,17 +1916,6 @@ export interface ClientCaptchaInfoModel {
   siteKey?: string;
 }
 
-export interface ContainerProviderModel {
-  /** Type of the container backend in use */
-  type?: ContainerProviderType;
-}
-
-export enum ContainerProviderType {
-  Docker = "Docker",
-  Kubernetes = "Kubernetes",
-  DockerCompose = "DockerCompose",
-}
-
 /** Hash Pow verification */
 export interface HashPowChallenge {
   /** Challenge ID */
@@ -1957,14 +1964,6 @@ export interface SignatureVerifyModel {
    * @minLength 1
    */
   publicKey: string;
-}
-
-/** Data Import/Export Modal */
-export interface DataExportModel {
-  /**
-   * Import/Export data, usually YAML or JSON
-   */
-  data: string;
 }
 
 import { apiLanguage } from "@Utils/I18n";
@@ -2575,22 +2574,6 @@ export class Api<
       ),
 
     /**
-     * @description Use this API to get container provider specific settings
-     *
-     * @tags Admin
-     * @name AdminGetContainerProvider
-     * @summary Get container provider configuration
-     * @request GET:/api/admin/containerprovider
-     */
-    adminGetContainerProvider: (params: RequestParams = {}) =>
-      this.request<ContainerProviderModel, RequestResponse>({
-        path: `/api/admin/containerprovider`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
      * @description Use this API to get global settings, requires Admin permission
      *
      * @tags Admin
@@ -2631,6 +2614,56 @@ export class Api<
       data?: ConfigEditModel | Promise<ConfigEditModel>,
       options?: MutatorOptions,
     ) => mutate<ConfigEditModel>(`/api/admin/config`, data, options),
+
+    /**
+     * No description
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider
+     * @request GET:/api/admin/containerprovider
+     */
+    adminGetContainerProvider: (params: RequestParams = {}) =>
+      this.request<ContainerProviderModel, RequestResponse>({
+        path: `/api/admin/containerprovider`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * No description
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider
+     * @request GET:/api/admin/containerprovider
+     */
+    useAdminGetContainerProvider: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ContainerProviderModel, RequestResponse>(
+        doFetch ? `/api/admin/containerprovider` : null,
+        options,
+      ),
+
+    /**
+     * No description
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider
+     * @request GET:/api/admin/containerprovider
+     */
+    mutateAdminGetContainerProvider: (
+      data?: ContainerProviderModel | Promise<ContainerProviderModel>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<ContainerProviderModel>(
+        `/api/admin/containerprovider`,
+        data,
+        options,
+      ),
 
     /**
      * @description Use this API to get all container instances, requires Admin permission
@@ -3412,71 +3445,6 @@ export class Api<
         body: data,
         type: ContentType.FormData,
         format: "json",
-        ...params,
-      }),
-  };
-  importExport = {
-    /**
-     * @description Import a game from YAML. Needs Admin.
-     *
-     * @tags Import
-     * @name ImportGame
-     * @summary Import Game
-     * @request POST:/api/import/game
-     */
-    importGame: (data: DataExportModel, params: RequestParams = {}) =>
-      this.request<GameInfoModel, RequestResponse>({
-        path: `/api/import/game`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * @description Import a challenge from YAML. Needs Admin.
-     *
-     * @tags Import
-     * @name ImportGameChallenge
-     * @summary Import Game
-     * @request POST:/api/import/game
-     */
-    importGameChallenge: (id: number, data: DataExportModel, params: RequestParams = {}) =>
-      this.request<ChallengeInfoModel, RequestResponse>({
-        path: `/api/import/game/${id}/challenge`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * @description Export a game to YAML. Needs Admin.
-     *
-     * @tags Export
-     * @name ExportGame
-     * @summary Export Game
-     * @request POST:/api/export/game/{id}
-     */
-    exportGame: (id: number, params: RequestParams = {}) =>
-      this.request<DataExportModel, RequestResponse>({
-        path: `/api/export/game/${id}`,
-        method: "GET",
-        ...params,
-      }),
-
-    /**
-     * @description Export a challenge to YAML. Needs Admin.
-     *
-     * @tags Export
-     * @name ExportGameChallenge
-     * @summary Export Challenge
-     * @request POST:/api/export/game/{id}/challenge/{cId}
-     */
-    exportGameChallenge: (id: number, cId: number, params: RequestParams = {}) =>
-      this.request<DataExportModel, RequestResponse>({
-        path: `/api/export/game/${id}/challenge/${cId}`,
-        method: "GET",
         ...params,
       }),
   };
@@ -5483,6 +5451,155 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.FormData,
+        ...params,
+      }),
+  };
+  importExport = {
+    /**
+     * @description Retrieving a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGame
+     * @summary Get Game YAML export
+     * @request GET:/api/export/game/{id}
+     */
+    importExportExportGame: (id: number, params: RequestParams = {}) =>
+      this.request<DataExportModel, RequestResponse>({
+        path: `/api/export/game/${id}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieving a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGame
+     * @summary Get Game YAML export
+     * @request GET:/api/export/game/{id}
+     */
+    useImportExportExportGame: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<DataExportModel, RequestResponse>(
+        doFetch ? `/api/export/game/${id}` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieving a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGame
+     * @summary Get Game YAML export
+     * @request GET:/api/export/game/{id}
+     */
+    mutateImportExportExportGame: (
+      id: number,
+      data?: DataExportModel | Promise<DataExportModel>,
+      options?: MutatorOptions,
+    ) => mutate<DataExportModel>(`/api/export/game/${id}`, data, options),
+
+    /**
+     * @description Retrieving a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGameChallenge
+     * @summary Get Game Challenge as Data Export
+     * @request GET:/api/export/game/{id}/challenge/{cId}
+     */
+    importExportExportGameChallenge: (
+      id: number,
+      cId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataExportModel, RequestResponse>({
+        path: `/api/export/game/${id}/challenge/${cId}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieving a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGameChallenge
+     * @summary Get Game Challenge as Data Export
+     * @request GET:/api/export/game/{id}/challenge/{cId}
+     */
+    useImportExportExportGameChallenge: (
+      id: number,
+      cId: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<DataExportModel, RequestResponse>(
+        doFetch ? `/api/export/game/${id}/challenge/${cId}` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieving a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGameChallenge
+     * @summary Get Game Challenge as Data Export
+     * @request GET:/api/export/game/{id}/challenge/{cId}
+     */
+    mutateImportExportExportGameChallenge: (
+      id: number,
+      cId: number,
+      data?: DataExportModel | Promise<DataExportModel>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<DataExportModel>(
+        `/api/export/game/${id}/challenge/${cId}`,
+        data,
+        options,
+      ),
+
+    /**
+     * @description Adding a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportImportGame
+     * @summary Add Game
+     * @request POST:/api/import/game
+     */
+    importExportImportGame: (
+      data: DataExportModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<GameInfoModel, RequestResponse>({
+        path: `/api/import/game`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Adding a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportImportGameChallenge
+     * @summary Import a game challenge from yaml
+     * @request POST:/api/import/game/{id}/challenge
+     */
+    importExportImportGameChallenge: (
+      id: number,
+      data: DataExportModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<ChallengeInfoModel, RequestResponse>({
+        path: `/api/import/game/${id}/challenge`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
   };
