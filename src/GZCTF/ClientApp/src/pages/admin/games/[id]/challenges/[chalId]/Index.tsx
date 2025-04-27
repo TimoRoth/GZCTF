@@ -620,6 +620,7 @@ const GameChallengeEdit: FC = () => {
         mode="export"
         title={t('admin.button.games.export')}
         data={exportedData}
+        name={challengeInfo.title ?? 'challenge_export'}
       />
     </WithChallengeEdit>
   )

@@ -479,6 +479,7 @@ const GameInfoEdit: FC = () => {
         mode="export"
         title={t('admin.button.games.export')}
         data={exportedData}
+        name={game?.title ?? 'game_export'}
       />
     </WithGameEditTab>
   )

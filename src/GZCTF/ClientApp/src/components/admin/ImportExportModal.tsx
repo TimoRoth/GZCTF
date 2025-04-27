@@ -13,10 +13,11 @@ interface ImportExportModalProps extends ModalProps {
   onSubmitCB?: (text: string) => Promise<unknown> | void
   title: string
   data?: string
+  name?: string
 }
 
 export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
-  const { mode, onSubmitCB, title, data = '', ...modalProps } = props
+  const { mode, onSubmitCB, title, data = '', name = 'export', ...modalProps } = props
   const [text, setText] = useInputState(data)
   const [disabled, setDisabled] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -136,7 +137,7 @@ export const ImportExportModal: FC<ImportExportModalProps> = (props) => {
               <a
                 style={{ display: 'none' }}
                 ref={downloadLinkRef}
-                download="export.yml"
+                download={name + '.yml'}
               >
               </a>
               <Button
