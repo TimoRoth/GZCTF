@@ -2616,7 +2616,7 @@ export class Api<
     ) => mutate<ConfigEditModel>(`/api/admin/config`, data, options),
 
     /**
-     * No description
+     * @description Use this API to get the current ContainerProvider config, requires Admin permission
      *
      * @tags Admin
      * @name AdminGetContainerProvider
@@ -2631,7 +2631,7 @@ export class Api<
         ...params,
       }),
     /**
-     * No description
+     * @description Use this API to get the current ContainerProvider config, requires Admin permission
      *
      * @tags Admin
      * @name AdminGetContainerProvider
@@ -2648,7 +2648,7 @@ export class Api<
       ),
 
     /**
-     * No description
+     * @description Use this API to get the current ContainerProvider config, requires Admin permission
      *
      * @tags Admin
      * @name AdminGetContainerProvider
