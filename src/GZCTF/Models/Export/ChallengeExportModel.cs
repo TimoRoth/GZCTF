@@ -28,6 +28,8 @@ namespace GZCTF.Models.Export
 
         public string? FileName { get; set; }
 
+        public int? SubmissionLimit { get; set; }
+
         public string? ContainerImage { get; set; }
 
         [Range(32, 1048576, ErrorMessageResourceName = nameof(Resources.Program.Model_OutOfRange), ErrorMessageResourceType = typeof(Resources.Program))]
@@ -67,6 +69,7 @@ namespace GZCTF.Models.Export
                 Hints = Hints,
                 IsEnabled = IsEnabled ?? false,
                 FileName = FileName,
+                SubmissionLimit = SubmissionLimit ?? 0,
                 ContainerImage = ContainerImage,
                 MemoryLimit = MemoryLimit,
                 CPUCount = CpuCount,
@@ -93,6 +96,7 @@ namespace GZCTF.Models.Export
                 IsEnabled = chal.IsEnabled,
                 FileName = chal.FileName,
                 ContainerImage = chal.ContainerImage,
+                SubmissionLimit = chal.SubmissionLimit,
                 MemoryLimit = chal.MemoryLimit,
                 CpuCount = chal.CPUCount,
                 StorageLimit = chal.StorageLimit,
