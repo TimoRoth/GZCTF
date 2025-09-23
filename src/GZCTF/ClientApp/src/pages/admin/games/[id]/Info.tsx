@@ -19,7 +19,7 @@ import { Dropzone } from '@mantine/dropzone'
 import { useClipboard, useInputState } from '@mantine/hooks'
 import { useModals } from '@mantine/modals'
 import { notifications, showNotification, updateNotification } from '@mantine/notifications'
-import { mdiCheck, mdiClipboard, mdiClose, mdiContentSaveOutline, mdiDeleteOutline, mdiDiceMultiple } from '@mdi/js'
+import { mdiCheck, mdiClipboard, mdiClose, mdiExport, mdiContentSaveOutline, mdiDeleteOutline, mdiDiceMultiple } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import dayjs from 'dayjs'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { SwitchLabel } from '@Components/admin/SwitchLabel'
 import { WithGameEditTab } from '@Components/admin/WithGameEditTab'
+import { ImportExportModal } from '@Components/admin/ImportExportModal'
 import { getInputNumber, randomInviteCode, showErrorMsg, tryGetErrorMsg } from '@Utils/Shared'
 import { IMAGE_MIME_TYPES } from '@Utils/Shared'
 import { useAdminGame } from '@Hooks/useGame'
@@ -47,6 +48,8 @@ const GameInfoEdit: FC = () => {
   const [start, setStart] = useInputState(dayjs())
   const [end, setEnd] = useInputState(dayjs())
   const [wpddl, setWpddl] = useInputState(3)
+  const [exportOpened, setExportOpened] = useState(false)
+  const [exportedData, setExportedData] = useState('')
 
   const modals = useModals()
   const clipboard = useClipboard()
@@ -164,6 +167,17 @@ const GameInfoEdit: FC = () => {
     })
   }
 
+  const onExport = async () => {
+    try {
+      setDisabled(true)
+      const exportRes = await api.importExport.importExportExportGame(numId);
+      setExportedData(exportRes.data.data ?? '')
+      setExportOpened(true)
+    } finally {
+      setDisabled(false);
+    }
+  }
+
   return (
     <WithGameEditTab
       headProps={{ justify: 'apart' }}
@@ -189,6 +203,9 @@ const GameInfoEdit: FC = () => {
           </Button>
           <Button leftSection={<Icon path={mdiClipboard} size={1} />} disabled={disabled} onClick={onCopyPublicKey}>
             {t('admin.button.games.copy_public_key')}
+          </Button>
+          <Button leftSection={<Icon path={mdiExport} size={1} />} disabled={disabled} onClick={onExport}>
+            {t('admin.button.games.export')}
           </Button>
           <Button
             leftSection={<Icon path={mdiContentSaveOutline} size={1} />}
@@ -405,6 +422,14 @@ const GameInfoEdit: FC = () => {
           </Input.Wrapper>
         </Grid.Col>
       </Grid>
+      <ImportExportModal
+        opened={exportOpened}
+        onClose={() => setExportOpened(false)}
+        mode="export"
+        title={t('admin.button.games.export')}
+        data={exportedData}
+        name={game?.title ?? 'game_export'}
+      />
     </WithGameEditTab>
   )
 }

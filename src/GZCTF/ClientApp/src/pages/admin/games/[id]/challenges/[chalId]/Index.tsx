@@ -17,7 +17,7 @@ import {
 import { DateTimePicker } from '@mantine/dates'
 import { useModals } from '@mantine/modals'
 import { showNotification } from '@mantine/notifications'
-import { mdiCheck, mdiContentSaveOutline, mdiDatabaseEditOutline, mdiDeleteOutline, mdiEyeOutline } from '@mdi/js'
+import { mdiCheck, mdiContentSaveOutline, mdiDatabaseEditOutline, mdiDeleteOutline, mdiEyeOutline, mdiExport } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import dayjs from 'dayjs'
 import { FC, useEffect, useState } from 'react'
@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router'
 import { HintList } from '@Components/HintList'
 import { InstanceEntry } from '@Components/InstanceEntry'
+import { ImportExportModal } from '@Components/admin/ImportExportModal'
 import { ChallengePreviewModal } from '@Components/admin/ChallengePreviewModal'
 import { SwitchLabel } from '@Components/admin/SwitchLabel'
 import { WithChallengeEdit } from '@Components/admin/WithChallengeEdit'
@@ -67,6 +68,9 @@ const GameChallengeEdit: FC = () => {
   const [currentAcceptCount, setCurrentAcceptCount] = useState(0)
   const [previewOpened, setPreviewOpened] = useState(false)
   const [containerProvider, setContainerProvider] = useState<ContainerProviderType | null>(cachedContainerProvider);
+
+  const [exportOpened, setExportOpened] = useState(false)
+  const [exportedData, setExportedData] = useState('')
 
   const modals = useModals()
   const challengeTypeLabelMap = useChallengeTypeLabelMap()
@@ -206,6 +210,17 @@ const GameChallengeEdit: FC = () => {
     }
   }
 
+  const onExport = async () => {
+    try {
+      setDisabled(true)
+      const exportRes = await api.importExport.importExportExportGameChallenge(numId, numCId)
+      setExportedData(exportRes.data.data ?? '')
+      setExportOpened(true)
+    } finally {
+      setDisabled(false);
+    }
+  }
+
   const tryDefault: <T>(values: T[], defaultValue?: NonNullable<T>) => NonNullable<T> | undefined = (vs, d) => {
     return vs.find((v) => !!v) ?? d
   }
@@ -257,6 +272,13 @@ const GameChallengeEdit: FC = () => {
               to={`/admin/games/${numId}/challenges/${numCId}/flags`}
             >
               {t('admin.button.challenges.edit_more')}
+            </Button>
+            <Button
+              disabled={disabled}
+              leftSection={<Icon path={mdiExport} size={1} />}
+              onClick={onExport}
+            >
+              {t('admin.button.challenges.export')}
             </Button>
             <Button
               disabled={disabled}
@@ -625,6 +647,14 @@ const GameChallengeEdit: FC = () => {
         cateData={
           challengeCategoryLabelMap.get((challengeInfo?.category as ChallengeCategory) ?? ChallengeCategory.Misc)!
         }
+      />
+      <ImportExportModal
+        opened={exportOpened}
+        onClose={() => setExportOpened(false)}
+        mode="export"
+        title={t('admin.button.games.export')}
+        data={exportedData}
+        name={challengeInfo.title ?? 'challenge_export'}
       />
     </WithChallengeEdit>
   )

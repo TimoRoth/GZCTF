@@ -65,6 +65,14 @@ public interface IGameRepository : IRepository
     public Task LoadDivisions(Game game, CancellationToken token = default);
 
     /// <summary>
+    /// Populate the Challenges list in the game
+    /// </summary>
+    /// <param name="game">Game to populate</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public Task LoadChallenges(Game game, CancellationToken token = default);
+
+    /// <summary>
     /// Check if the game exists by ID
     /// </summary>
     /// <param name="id"></param>

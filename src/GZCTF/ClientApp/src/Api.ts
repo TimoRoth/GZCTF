@@ -2041,6 +2041,12 @@ export interface BasicWriteupInfoModel {
   note?: string;
 }
 
+/** Generic Data Import/Export Model */
+export interface DataExportModel {
+  /** The serialized data of the thing to export/import */
+  data?: string;
+}
+
 /** Post information */
 export interface PostInfoModel {
   /**
@@ -5805,6 +5811,155 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.FormData,
+        ...params,
+      }),
+  };
+  importExport = {
+    /**
+     * @description Retrieving a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGame
+     * @summary Get Game YAML export
+     * @request GET:/api/export/game/{id}
+     */
+    importExportExportGame: (id: number, params: RequestParams = {}) =>
+      this.request<DataExportModel, RequestResponse>({
+        path: `/api/export/game/${id}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieving a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGame
+     * @summary Get Game YAML export
+     * @request GET:/api/export/game/{id}
+     */
+    useImportExportExportGame: (
+      id: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<DataExportModel, RequestResponse>(
+        doFetch ? `/api/export/game/${id}` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieving a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGame
+     * @summary Get Game YAML export
+     * @request GET:/api/export/game/{id}
+     */
+    mutateImportExportExportGame: (
+      id: number,
+      data?: DataExportModel | Promise<DataExportModel>,
+      options?: MutatorOptions,
+    ) => mutate<DataExportModel>(`/api/export/game/${id}`, data, options),
+
+    /**
+     * @description Retrieving a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGameChallenge
+     * @summary Get Game Challenge as Data Export
+     * @request GET:/api/export/game/{id}/challenge/{cId}
+     */
+    importExportExportGameChallenge: (
+      id: number,
+      cId: number,
+      params: RequestParams = {},
+    ) =>
+      this.request<DataExportModel, RequestResponse>({
+        path: `/api/export/game/${id}/challenge/${cId}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Retrieving a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGameChallenge
+     * @summary Get Game Challenge as Data Export
+     * @request GET:/api/export/game/{id}/challenge/{cId}
+     */
+    useImportExportExportGameChallenge: (
+      id: number,
+      cId: number,
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<DataExportModel, RequestResponse>(
+        doFetch ? `/api/export/game/${id}/challenge/${cId}` : null,
+        options,
+      ),
+
+    /**
+     * @description Retrieving a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportExportGameChallenge
+     * @summary Get Game Challenge as Data Export
+     * @request GET:/api/export/game/{id}/challenge/{cId}
+     */
+    mutateImportExportExportGameChallenge: (
+      id: number,
+      cId: number,
+      data?: DataExportModel | Promise<DataExportModel>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<DataExportModel>(
+        `/api/export/game/${id}/challenge/${cId}`,
+        data,
+        options,
+      ),
+
+    /**
+     * @description Adding a game requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportImportGame
+     * @summary Add Game
+     * @request POST:/api/import/game
+     */
+    importExportImportGame: (
+      data: DataExportModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<GameInfoModel, RequestResponse>({
+        path: `/api/import/game`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description Adding a game challenge requires administrator privileges
+     *
+     * @tags ImportExport
+     * @name ImportExportImportGameChallenge
+     * @summary Import a game challenge from yaml
+     * @request POST:/api/import/game/{id}/challenge
+     */
+    importExportImportGameChallenge: (
+      id: number,
+      data: DataExportModel,
+      params: RequestParams = {},
+    ) =>
+      this.request<ChallengeInfoModel, RequestResponse>({
+        path: `/api/import/game/${id}/challenge`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
   };

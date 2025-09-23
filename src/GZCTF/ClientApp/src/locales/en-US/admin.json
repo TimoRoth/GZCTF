@@ -27,6 +27,8 @@
         "add": "Add Hint"
       },
       "new": "New Challenge",
+      "import": "Import Challenge",
+      "export": "Export Challenge",
       "next": "Next",
       "preview": "Preview",
       "previous": "Previous",
@@ -47,7 +49,9 @@
       },
       "copy_public_key": "Copy Public Key",
       "delete": "Delete",
-      "new": "New Game"
+      "new": "New Game",
+      "import": "Import Game",
+      "export": "Export Game"
     },
     "notices": {
       "delete": "Delete",

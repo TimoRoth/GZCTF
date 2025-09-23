@@ -1,5 +1,5 @@
 import { ActionIcon, Avatar, Badge, Button, Code, Group, Paper, ScrollArea, Switch, Table, Text } from '@mantine/core'
-import { mdiArrowLeftBold, mdiArrowRightBold, mdiChevronTripleRight, mdiPencilOutline, mdiPlus } from '@mdi/js'
+import { mdiArrowLeftBold, mdiArrowRightBold, mdiChevronTripleRight, mdiPencilOutline, mdiPlus, mdiImport } from '@mdi/js'
 import { Icon } from '@mdi/react'
 import dayjs from 'dayjs'
 import { FC, useEffect, useState } from 'react'
@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router'
 import { GameColorMap } from '@Components/GameCard'
 import { AdminPage } from '@Components/admin/AdminPage'
 import { GameCreateModal } from '@Components/admin/GameCreateModal'
+import { ImportExportModal } from '@Components/admin/ImportExportModal'
 import { showErrorMsg } from '@Utils/Shared'
 import { useArrayResponse } from '@Hooks/useArrayResponse'
 import { getGameStatus } from '@Hooks/useGame'
@@ -20,12 +21,18 @@ const ITEM_COUNT_PER_PAGE = 30
 const Games: FC = () => {
   const [page, setPage] = useState(1)
   const [createOpened, setCreateOpened] = useState(false)
+  const [importOpened, setImportOpened] = useState(false)
   const [disabled, setDisabled] = useState(false)
   const { data: games, total, setData: setGames, updateData: updateGames } = useArrayResponse<GameInfoModel>()
   const [current, setCurrent] = useState(0)
 
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  const doImportGame = async (text: string) => {
+    const gameResp = await api.importExport.importExportImportGame({ data: text })
+    navigate(`/admin/games/${gameResp.data.id}/info`);
+  }
 
   const onToggleHidden = async (game: GameInfoModel) => {
     if (!game.id) return
@@ -76,9 +83,14 @@ const Games: FC = () => {
       headProps={{ justify: 'apart' }}
       head={
         <>
-          <Button leftSection={<Icon path={mdiPlus} size={1} />} onClick={() => setCreateOpened(true)}>
-            {t('admin.button.games.new')}
-          </Button>
+          <Group wrap="nowrap" gap="md">
+            <Button leftSection={<Icon path={mdiPlus} size={1} />} onClick={() => setCreateOpened(true)}>
+              {t('admin.button.games.new')}
+            </Button>
+            <Button leftSection={<Icon path={mdiImport} size={1} />} onClick={() => setImportOpened(true)}>
+              {t('admin.button.games.import')}
+            </Button>
+          </Group>
           <Group w="calc(100% - 9rem)" justify="right">
             <Text fw="bold" size="sm">
               <Trans
@@ -179,6 +191,13 @@ const Games: FC = () => {
         opened={createOpened}
         onClose={() => setCreateOpened(false)}
         onAddGame={(game) => updateGames([...(games ?? []), game])}
+      />
+      <ImportExportModal
+        opened={importOpened}
+        onClose={() => setImportOpened(false)}
+        onSubmitCB={(text) => doImportGame(text)}
+        mode="import"
+        title={t('admin.button.games.import')}
       />
     </AdminPage>
   )
