@@ -114,6 +114,11 @@ public class Game
     [Required]
     public string WriteupNote { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Whether the game is in practice mode (most operations can still be performed after the game ends)
+    /// </summary>
+    public bool PracticeMode { get; set; } = true;
+
     [JsonIgnore]
     [Column(nameof(BloodBonus))]
     public long BloodBonusValue { get; set; } = BloodBonus.DefaultValue;
@@ -245,11 +250,6 @@ public class Game
     /// </summary>
     [JsonIgnore]
     public ICollection<Team>? Teams { get; set; }
-
-    /// <summary>
-    /// Whether the game is in practice mode (most operations can still be performed after the game ends)
-    /// </summary>
-    public bool PracticeMode { get; set; } = true;
 
     #endregion Db Relationship
 }
