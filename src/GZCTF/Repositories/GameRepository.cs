@@ -54,6 +54,9 @@ public class GameRepository(
     public Task<Game?> GetGameById(int id, CancellationToken token = default) =>
         Context.Games.FirstOrDefaultAsync(x => x.Id == id, token);
 
+    public Task LoadChallenges(Game game, CancellationToken token = default) =>
+        Context.Entry(game).Collection(c => c.Challenges).LoadAsync(token);
+
     public Task<int[]> GetUpcomingGames(CancellationToken token = default) =>
         Context.Games.Where(g => g.StartTimeUtc > DateTime.UtcNow
                                  && g.StartTimeUtc - DateTime.UtcNow < TimeSpan.FromMinutes(15))

@@ -13,6 +13,16 @@ public interface IBlobRepository : IRepository
         CancellationToken token = default);
 
     /// <summary>
+    /// Create or update a blob file from a stream
+    /// </summary>
+    /// <param name="content">Stream containing blob data</param>
+    /// <param name="fileName">The name to save the file as</param>
+    /// <param name="token"></param>
+    /// <returns>The file object</returns>
+    public Task<LocalFile> CreateOrUpdateBlob(Stream content, string fileName,
+        CancellationToken token = default);
+
+    /// <summary>
     /// Create or update an image file, optionally resizing it
     /// </summary>
     /// <param name="file">The form file</param>

@@ -7,9 +7,11 @@
   },
   "button": {
     "copy": "In die Zwischenablage kopieren",
+    "download": "Herunterladen",
     "reset": "Zurücksetzen",
     "retry": "Erneut versuchen",
     "select_file": "Datei auswählen",
+    "submit": "Abschicken",
     "try_again": "Erneut versuchen",
     "uploading": "Wird hochgeladen"
   },
@@ -136,5 +138,8 @@
   "title": {
     "404": "The Nowhere",
     "about": "Über"
+  },
+  "messages": {
+    "copied_to_clipboard": "In die Zwischenablage kopiert"
   }
 }

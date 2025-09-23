@@ -26,6 +26,8 @@
         "add": "Hinweis hinzufügen"
       },
       "new": "Neue Herausforderung",
+      "import": "Herausforderung importieren",
+      "export": "Herausforderung exportieren",
       "next": "Weiter",
       "preview": "Vorschau",
       "previous": "Zurück",
@@ -43,7 +45,9 @@
       },
       "copy_public_key": "Öffentlichen Schlüssel kopieren",
       "delete": "Löschen",
-      "new": "Neues Spiel"
+      "new": "Neues Spiel",
+      "import": "Spiel Importieren",
+      "export": "Spiel Exportieren"
     },
     "notices": {
       "delete": "Löschen",
