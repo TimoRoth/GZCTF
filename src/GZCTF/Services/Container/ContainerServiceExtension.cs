@@ -41,6 +41,8 @@ public static class ContainerServiceExtension
         {
             ContainerProviderType.Docker => services
                 .AddSingleton<IContainerProvider<DockerClient, DockerMetadata>, DockerProvider>(),
+            ContainerProviderType.DockerCompose => services
+                .AddSingleton<IContainerProvider<DockerClient, DockerMetadata>, DockerProvider>(),
             ContainerProviderType.Kubernetes => services
                 .AddSingleton<IContainerProvider<Kubernetes, KubernetesMetadata>, KubernetesProvider>(),
             _ => services
@@ -53,6 +55,9 @@ public static class ContainerServiceExtension
 
         if (config.DockerConfig?.SwarmMode is true)
             return services.AddSingleton<IContainerManager, SwarmManager>();
+
+        if (config.Type == ContainerProviderType.DockerCompose)
+            return services.AddSingleton<IContainerManager, DockerComposeManager>();
 
         return services.AddSingleton<IContainerManager, DockerManager>();
     }
