@@ -114,6 +114,12 @@ export enum ParticipationStatus {
   Unsubmitted = "Unsubmitted",
 }
 
+export enum ContainerProviderType {
+  Docker = "Docker",
+  Kubernetes = "Kubernetes",
+  DockerCompose = "DockerCompose",
+}
+
 /** User role enumeration */
 export enum Role {
   Banned = "Banned",
@@ -326,6 +332,12 @@ export interface ProfileUserInfoModel {
   avatar?: string | null;
   /** User role */
   role?: Role | null;
+}
+
+/** Global Container Provider Settings */
+export interface ContainerProviderModel {
+  /** Container Provider Type */
+  type?: ContainerProviderType;
 }
 
 /** Global configuration update */
@@ -2596,6 +2608,56 @@ export class Api<
       data?: ConfigEditModel | Promise<ConfigEditModel>,
       options?: MutatorOptions,
     ) => mutate<ConfigEditModel>(`/api/admin/config`, data, options),
+
+    /**
+     * @description Use this API to get the current ContainerProvider config, requires Admin permission
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider
+     * @request GET:/api/admin/containerprovider
+     */
+    adminGetContainerProvider: (params: RequestParams = {}) =>
+      this.request<ContainerProviderModel, RequestResponse>({
+        path: `/api/admin/containerprovider`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+    /**
+     * @description Use this API to get the current ContainerProvider config, requires Admin permission
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider
+     * @request GET:/api/admin/containerprovider
+     */
+    useAdminGetContainerProvider: (
+      options?: SWRConfiguration,
+      doFetch: boolean = true,
+    ) =>
+      useSWR<ContainerProviderModel, RequestResponse>(
+        doFetch ? `/api/admin/containerprovider` : null,
+        options,
+      ),
+
+    /**
+     * @description Use this API to get the current ContainerProvider config, requires Admin permission
+     *
+     * @tags Admin
+     * @name AdminGetContainerProvider
+     * @summary Get container provider
+     * @request GET:/api/admin/containerprovider
+     */
+    mutateAdminGetContainerProvider: (
+      data?: ContainerProviderModel | Promise<ContainerProviderModel>,
+      options?: MutatorOptions,
+    ) =>
+      mutate<ContainerProviderModel>(
+        `/api/admin/containerprovider`,
+        data,
+        options,
+      ),
 
     /**
      * @description Use this API to get all container instances, requires Admin permission
